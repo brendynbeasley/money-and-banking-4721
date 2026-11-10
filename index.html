@@ -12734,7 +12734,7 @@ let S=Object.assign(FRESH(),store.get());
 const cs=n=>S.ch[n]||(S.ch[n]={done:{},boss:0,exam:0});
 if(S.v!==3){if(S.done){cs(11).done=S.done;delete S.done}if(S.bossWins){cs(11).boss=S.bossWins;delete S.bossWins}const t={};Object.keys(S.terms||{}).forEach(k=>t[k.includes('|')?k:'11|'+k]=1);S.terms=t;if(S.v!==2)S.sound=true;S.v=3}
 S.snd=S.snd||{};S.terms=S.terms||{};S.miss=S.miss||[];S.ch=S.ch||{};
-const save=()=>store.set(S);
+var lastPosJ='';const save=()=>{const pj=JSON.stringify(S.pos||null);if(pj!==lastPosJ){if(lastPosJ)S.posTs=Date.now();lastPosJ=pj}store.set(S);if(typeof syncSoon==='function')syncSoon()};
 /* autosave: after every tap/keypress, every few seconds, and whenever the page is left */
 (()=>{let q=0;const soon=()=>{if(q)return;q=setTimeout(()=>{q=0;save()},250)};
  ['keydown','pointerup','touchend','change','input'].forEach(ev=>addEventListener(ev,soon,true));
@@ -12893,7 +12893,7 @@ let mode='idle',resolver=null,skip=false,turbo=false,auto=false,ctx='boot',loc='
 const scroll=()=>{screen.scrollTop=screen.scrollHeight};
 function setMode(m){mode=m;document.body.classList.toggle('typing',m==='typing')}
 const clock=t=>t>90?Math.floor(t/60)+':'+String(t%60).padStart(2,'0'):t+'s';
-function updateStatus(){if(!C)return;if(innerWidth<600){statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}hp ${integrity}% · xp ${S.xp}</span>`;return}statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}integrity ${bar(integrity,100,5)} ${integrity}% · streak ${streak} · xp ${S.xp} · terms ${termsGot(C)}/${C.gloss.length} · ${S.diff}</span>`}
+function updateStatus(){if(!C)return;if(innerWidth<600){statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}hp ${integrity}% · ${syncTag()}xp ${S.xp}</span>`;return}statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}integrity ${bar(integrity,100,5)} ${integrity}% · streak ${streak} · ${syncTag()}xp ${S.xp} · terms ${termsGot(C)}/${C.gloss.length} · ${S.diff}</span>`}
 const TALIAS={'screen and certify':'screening','monitor':'monitoring','diversifying':'diversification'};
 function collect(txt){if(!C)return;const t=txt.toLowerCase();let got=false;for(const g of C.gloss){const k=C.n+'|'+g.n;if(S.terms[k])continue;if(TALIAS[t]===g.n||t===g.n||t===g.n+'s'||(' '+t+' ').includes(' '+g.n.toLowerCase()+' ')){S.terms[k]=1;got=true}}if(got){save();play('pickup');updateStatus()}}
 
@@ -13114,7 +13114,7 @@ async function readCode(str){const t=(str||'').toLowerCase().replace(/^.*#p=/,''
   if(t.length<4)throw new Error('too short');const c=t.slice(0,-2);if(ck(c)!==t.slice(-2))throw new Error('checksum');
   let body=b32d(c.slice(1));if(c[0]==='a')body=await pipeB(body,new DecompressionStream('deflate-raw'));else if(c[0]!=='b')throw new Error('version');
   return JSON.parse(new TextDecoder().decode(body))}
-function mergeState(d){let added=0;
+function mergeState(d,quiet){let added=0;
   if(d.n&&(!S.name||S.name==='operator'))S.name=String(d.n).slice(0,24);
   S.xp=Math.max(S.xp||0,+d.x||0);
   for(const n of Object.keys(d.ch||{})){const c=BOOK.ch[n];if(!c)continue;const st=cs(+n),[h,b,e]=d.ch[n];hex2mask(h).forEach((on,i)=>{if(on&&i<c.modules.length&&!st.done[i]){st.done[i]=1;added++}});st.boss=Math.max(st.boss||0,+b||0);st.exam=Math.max(st.exam||0,+e||0)}
@@ -13122,13 +13122,50 @@ function mergeState(d){let added=0;
   for(const a of d.m||[]){const e={c:a[0],m:a[1],s:a[2],t:a[3]?'sa':'q',i:a[4]};if(!S.miss.some(x=>mkey(x)===mkey(e)))S.miss.push(e)}
   if(S.miss.length>300)S.miss=S.miss.slice(-300);
   if(Array.isArray(d.p)&&BOOK.ch[d.p[0]])S.pos={c:d.p[0],mi:d.p[1],si:d.p[2],bi:d.p[3]||0};
-  if(d.c&&BOOK.ch[d.c])S.cur=d.c;
-  save();return added}
+  if(!quiet&&d.c&&BOOK.ch[d.c])S.cur=d.c;
+  if(!quiet)save();return added}
 async function codeNote(){try{const c=await makeCode();await type('Progress saved. Your progress code: '+c,{cls:'info'});await type('Type *code* to copy it or get a link · *load <code>* on any device to restore.',{cls:'dim',turbo:true})}catch(e){}}
 async function importFromHash(){const h=location.hash;if(!/^#p=/.test(h))return;try{const d=await readCode(h);mergeState(d);history.replaceState(null,'',location.pathname+location.search);if(S.cur&&BOOK.ch[S.cur])setChapter(S.cur);hashMsg=['PROGRESS LOADED FROM YOUR LINK · xp '+S.xp,'ok']}catch(e){hashMsg=['That progress link looks damaged, so nothing was loaded.','err']}}
+/* ================= GitHub sync: progress lives in progress.json on the 'progress' branch ================= */
+var SY={repo:'brendynbeasley/teller-chapter11',branch:'progress',file:'progress.json',sha:null,ready:false,busy:false,t:0,last:'',err:''};
+function syncTok(){try{return localStorage.getItem('tellerSyncToken')||''}catch(e){return''}}
+function setSyncTok(t){try{t?localStorage.setItem('tellerSyncToken',t):localStorage.removeItem('tellerSyncToken')}catch(e){}}
+const ghURL=()=>`https://api.github.com/repos/${SY.repo}/contents/${SY.file}`;
+const ghH=()=>({'Authorization':'Bearer '+syncTok(),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'});
+const b64u=str=>{const b=new TextEncoder().encode(str);let o='';for(let i=0;i<b.length;i+=0x8000)o+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(o)};
+const u64b=b=>new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+function syncBody(){const d=packState();d.pt=S.posTs||0;return JSON.stringify(d)}
+async function syncPull(){if(!syncTok())return false;
+  const r=await fetch(ghURL()+'?ref='+SY.branch+'&t='+Date.now(),{headers:ghH(),cache:'no-store'});
+  if(r.status===404){SY.sha=null;SY.ready=true;SY.err='';return true}
+  if(!r.ok){SY.err=r.status===401?'token rejected':r.status===403?'no permission':'GitHub error '+r.status;throw new Error(SY.err)}
+  const j=await r.json();SY.sha=j.sha;let d={};try{d=JSON.parse(u64b(j.content||''))||{}}catch(e){}
+  const keepPos=S.pos,keepTs=S.posTs||0;mergeState(d,true);
+  if((+d.pt||0)<keepTs){S.pos=keepPos;S.posTs=keepTs}else S.posTs=+d.pt||0;
+  store.set(S);SY.ready=true;SY.err='';return true}
+async function syncPush(keep){if(!syncTok()||!SY.ready||SY.busy)return;const body=syncBody();if(body===SY.last)return;
+  SY.busy=true;try{updateStatus();for(let tries=0;tries<2;tries++){
+    const r=await fetch(ghURL(),{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghH()),keepalive:!!keep,
+      body:JSON.stringify(Object.assign({message:'progress '+new Date().toISOString(),content:b64u(body),branch:SY.branch},SY.sha?{sha:SY.sha}:{}))});
+    if(r.ok){const j=await r.json();SY.sha=j.content&&j.content.sha;SY.last=body;SY.err='';updateStatus&&updateStatus();return}
+    if(r.status===409||r.status===422){await syncPull();continue}
+    SY.err=r.status===401?'token rejected':r.status===403||r.status===404?'no permission':'GitHub error '+r.status;return}
+  }catch(e){SY.err='offline'}finally{SY.busy=false;try{updateStatus()}catch(e){}}}
+function syncTag(){if(!syncTok())return'';return SY.err?'⚠ sync: '+SY.err+' · ':SY.busy?'☁ saving… · ':SY.ready?'☁ synced · ':'☁ connecting… · '}
+function syncSoon(){if(!SY.ready||!syncTok())return;clearTimeout(SY.t);SY.t=setTimeout(()=>syncPush(),1500)}
+async function syncStart(){const h=location.hash.match(/^#sync=([\w-]+)/);if(h){setSyncTok(h[1]);history.replaceState(null,'',location.pathname+location.search)}
+  if(!syncTok())return;try{await Promise.race([syncPull(),sleep(6000).then(()=>{throw new Error('slow')})]);syncSoon()}catch(e){if(!SY.err)SY.err='offline';setTimeout(()=>syncPull().then(syncSoon).catch(()=>{}),15000)}}
+addEventListener('pagehide',()=>{if(SY.ready)syncPush(true)});
+document.addEventListener('visibilitychange',()=>{if(!syncTok())return;if(document.visibilityState==='hidden'){if(SY.ready)syncPush(true)}else syncPull().then(()=>{updateStatus();syncSoon()}).catch(()=>{})});
 const CMD={
- help:async()=>{skip=false;for(const l of ["*STUDY*  (all for the current chapter)","  learn [n]     guided lessons. I teach, I ask. Wrong answers have consequences.","  resume        pick up exactly where you stopped","  ten           the professor's format: explain it in 10 words or less","  calc          calculation drills with fresh numbers and worked solutions","*PROVE IT*","  exam          his exam format: short answers + calculations, marked at the end","  boss          fight the chapter boss. 30 seconds a question.","  crack         decrypt key terms from their clues","  review        every question you have missed, across all chapters",...(C.cases?["  bank          you are the loan officer. Eight decisions. Don't go bust."]:[]),"*LOOK*","  gallery       every animation in the chapter (show <n> plays one)","  lab           this chapter's simulators",...(C.lab||[]).map(l=>'    '+padE(l.usage,36)+(l.eg?'e.g. '+l.eg:'')),"  anim pause|play   stop or start all animations (each has its own button too)","*REFERENCE*","  man [term] · terms · cheat · ls · cat <file> · print (a paper study sheet)","*THE BOOK*","  book          all 23 chapters and your progress      chapter <n>   switch","*SYSTEM*","  code          get your progress code / link    load <code>   restore it on any device","  menu · theme [name|next|random] · sound · volume [0-100] · speed [slow|normal|fast|instant]","  difficulty [chill|normal|hardcore] · input [auto|touch|keys] · status · clear · reboot · reset","*KEYS*  while I type: Enter, Space or click skips ahead.  quit leaves a mode."])await type(l,{turbo:true})},
+ help:async()=>{skip=false;for(const l of ["*STUDY*  (all for the current chapter)","  learn [n]     guided lessons. I teach, I ask. Wrong answers have consequences.","  resume        pick up exactly where you stopped","  ten           the professor's format: explain it in 10 words or less","  calc          calculation drills with fresh numbers and worked solutions","*PROVE IT*","  exam          his exam format: short answers + calculations, marked at the end","  boss          fight the chapter boss. 30 seconds a question.","  crack         decrypt key terms from their clues","  review        every question you have missed, across all chapters",...(C.cases?["  bank          you are the loan officer. Eight decisions. Don't go bust."]:[]),"*LOOK*","  gallery       every animation in the chapter (show <n> plays one)","  lab           this chapter's simulators",...(C.lab||[]).map(l=>'    '+padE(l.usage,36)+(l.eg?'e.g. '+l.eg:'')),"  anim pause|play   stop or start all animations (each has its own button too)","*REFERENCE*","  man [term] · terms · cheat · ls · cat <file> · print (a paper study sheet)","*THE BOOK*","  book          all 23 chapters and your progress      chapter <n>   switch","*SYSTEM*","  sync <token>  turn on automatic GitHub sync (once per device) · sync off","  code          get your progress code / link    load <code>   restore it on any device","  menu · theme [name|next|random] · sound · volume [0-100] · speed [slow|normal|fast|instant]","  difficulty [chill|normal|hardcore] · input [auto|touch|keys] · status · clear · reboot · reset","*KEYS*  while I type: Enter, Space or click skips ahead.  quit leaves a mode."])await type(l,{turbo:true})},
  menu:async()=>{out.innerHTML='';await mainMenu()},
+ sync:async a=>{const t=(a[0]||'').trim();
+   if(t==='off'){setSyncTok('');SY.ready=false;await type('Sync turned off on this device. Progress still saves here.',{cls:'dim'});return}
+   if(t&&t!=='now'){setSyncTok(t);SY.ready=false;SY.err='';await type('Connecting to GitHub…',{cls:'dim',turbo:true});
+     try{await syncPull();await syncPush();play('grant');await type('SYNC ON · this device now saves your progress to GitHub automatically.',{cls:'ok'});updateStatus()}catch(e){play('deny');await type('Could not connect: '+(SY.err||e.message)+'. Check the token has Contents: read and write on teller-chapter11.',{cls:'err'})}return}
+   if(!syncTok()){await type('Sync is off on this device. To turn it on: sync <your GitHub token>',{cls:'dim'});return}
+   try{await syncPull();await syncPush();await type('Synced with GitHub · xp '+S.xp,{cls:'ok'});updateStatus()}catch(e){await type('Sync problem: '+(SY.err||e.message),{cls:'err'})}},
  code:async()=>{let c;try{c=await makeCode()}catch(e){await type('Could not make a code in this browser.',{cls:'err'});return}
    const link=location.origin+location.pathname+'#p='+c;
    await type('YOUR PROGRESS CODE',{cls:'hd'});await type(c,{cls:'acc'});
@@ -13281,7 +13318,7 @@ async function boot(full){ctx='boot';skip=false;play('boot');for(const l of TH[S
     await say(["Name for the logbook?"]);const v=await rawAsk({ps:'<i class="a">login</i>:',ans:'operator',chips:TOUCH()?['trainee']:[]});if(TOUCH())0;S.name=(v||'operator').slice(0,24);save();
     await say([`Logged in as *${S.name}*. While I type, Enter or Space skips ahead. Every animation has a pause button. The ≡ button at the top holds the settings: terminal, sound, speed, difficulty, touch or keyboard.`,"Which chapter are you on? Pick it in the window."]);await bookPanel(true);out.innerHTML=''}
   await mainMenu()}
-(async()=>{setChapter(S.cur||11);await importFromHash();
+(async()=>{await syncStart();setChapter(S.cur||11);await importFromHash();
   if(!S.theme||!TH[S.theme]){setTheme('dos');await type('SELECT A TERMINAL',{cls:'hd'});await type('Pick one in the window. Not sure? MS-DOS is the house style.',{cls:'dim',turbo:true});await themePanel(true);out.innerHTML=''}
   setTheme(S.theme);await boot();shell()})();
 window.__t={get mode(){return mode},get ctx(){return ctx},get ps(){return ps1El.textContent},get live(){return LIVE.length},get panel(){return !!panelEl},get ch(){return C.n}};
