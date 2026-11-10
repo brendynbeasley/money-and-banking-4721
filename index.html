@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TELLER — Chapter 11 Terminal Tutor</title>
+<style>
+:root{--bg:#1e1e2e;--fg:#cdd6f4;--dim:#8a90aa;--acc:#f9e2af;--ok:#a6e3a1;--err:#f38ba8;--info:#89dceb;--bar:#313244;--barfg:#cdd6f4;--cbg:#11111b;--cfg:#f38ba8;--glow:none;--frame:transparent;--fw:0px;--bgimg:none;
+  --font:ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);background-image:var(--bgimg);color:var(--fg);font:15px/1.5 var(--font);text-shadow:var(--glow);overflow:hidden}
+#rain{position:fixed;inset:0;width:100%;height:100%;z-index:0;opacity:.2;display:none}
+[data-fx~=matrix] #rain{display:block}
+#win{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;height:100dvh;border:var(--fw) solid var(--frame)}
+#bar{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--bar);color:var(--barfg);padding:6px 12px;font-size:13px;text-shadow:none;flex-wrap:wrap}
+#bar .l{display:flex;gap:10px;align-items:center;min-width:0}
+.dots{display:none;gap:6px}.dots i{width:11px;height:11px;border-radius:50%;background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+[data-chrome=mac] .dots{display:flex}
+.wbtn{display:none;letter-spacing:.5em;padding-left:6px}[data-chrome=win] .wbtn{display:inline}
+#ttl{white-space:pre;overflow:hidden;text-overflow:ellipsis}
+#bar .r{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#bar select,#bar button{font:12px var(--font);background:transparent;color:inherit;border:1px solid currentColor;border-radius:3px;padding:2px 7px;cursor:pointer;opacity:.9}
+#bar select option{color:#111;background:#fff}
+#screen{flex:1;overflow-y:auto;padding:14px 16px 30px;cursor:text;scrollbar-color:var(--dim) transparent}
+[data-upper] #screen{text-transform:uppercase}
+.ln{white-space:pre-wrap;word-break:break-word;min-height:1.5em}
+.say{padding-left:9ch;text-indent:-9ch}.say.cont{text-indent:0}
+.who{color:var(--info);font-weight:700}
+.acc,.ln b{color:var(--acc);font-weight:700}
+.dim{color:var(--dim)}.err{color:var(--err)}.ok{color:var(--ok)}.info{color:var(--info)}
+.hd{display:table;background:var(--fg);color:var(--bg);padding:0 1ch;font-weight:700;margin:1.2em 0 .4em;text-shadow:none}
+.hd2{color:var(--acc);font-weight:700;margin-top:.8em;border-top:1px dashed var(--dim);padding-top:.5em}
+.q{font-weight:700}.opt{padding-left:2ch}
+.more{color:var(--dim)}
+pre.fig{font:inherit;font-size:min(1em,2.5vw);line-height:1.2;margin:.7em 0;color:var(--fg);overflow-x:auto;overflow-y:hidden;white-space:pre}
+pre.fig i{font-style:normal}pre.fig .m{color:var(--acc)}pre.fig .g{color:var(--ok)}pre.fig .r{color:var(--err)}
+#inl{white-space:pre-wrap;word-break:break-word}
+#ps1 i,.ln i{font-style:normal}
+#ps1 .u,.ln .u{color:var(--ok);font-weight:700}#ps1 .p,.ln .p{color:var(--info);font-weight:700}#ps1 .a,.ln .a{color:var(--acc)}
+.cur{display:inline-block;width:.6em;height:1.1em;background:currentColor;vertical-align:text-bottom;margin-left:1px;animation:blink 1.06s steps(1) infinite;box-shadow:var(--glow)}
+[data-cur=under] .cur{height:.2em;vertical-align:baseline}
+[data-cur=bar] .cur{width:2px}
+body.typing .cur{animation:none}
+@keyframes blink{50%{opacity:0}}
+#chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#chips button,.box button{font:inherit;font-size:.9em;color:var(--fg);background:transparent;border:1px solid var(--dim);border-radius:3px;padding:3px 10px;cursor:pointer;text-shadow:inherit;text-transform:inherit}
+#chips button:hover,.box button:hover,.box button.on{background:var(--fg);color:var(--bg);text-shadow:none}
+#status{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--ok);color:var(--bg);padding:2px 10px;font-size:12.5px;text-shadow:none;font-weight:700}
+#status .e{background:var(--err);padding:0 4px}
+#ghostf{position:fixed;left:0;bottom:0;width:1px;height:1px;overflow:hidden;opacity:0}
+#ghost{font-size:16px;width:200px}
+#fx{position:fixed;inset:0;z-index:2;pointer-events:none;display:none;background:repeating-linear-gradient(rgba(0,0,0,.2) 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.45))}
+[data-fx~=crt] #fx{display:block}
+#crash{position:fixed;inset:0;background:var(--cbg);color:var(--cfg);padding:10vh 8vw;white-space:pre-wrap;font-size:clamp(13px,2vw,18px);z-index:9;text-shadow:none;cursor:pointer}
+#crash[hidden]{display:none}
+.panel{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:12px;text-shadow:none}
+.box{background:var(--bg);color:var(--fg);border:2px solid var(--fg);box-shadow:8px 8px 0 rgba(0,0,0,.55);width:min(720px,100%);max-height:90vh;max-height:90dvh;overflow:auto;padding:0 16px 16px}
+.box h2{font:inherit;font-weight:700;background:var(--fg);color:var(--bg);margin:0 -16px 12px;padding:3px 16px;display:flex;justify-content:space-between;position:sticky;top:0}
+.box h2 button{border:0;color:var(--bg);padding:0 6px}.box h2 button:hover{background:var(--bg);color:var(--fg)}
+.box h3{font:inherit;font-weight:700;color:var(--acc);margin:14px 0 6px}
+.prow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.prow input[type=range]{flex:1;min-width:140px;accent-color:var(--acc)}
+.lvl button{border:0!important;padding:0 1px!important;font-size:1.3em!important;line-height:1;color:var(--acc)!important;background:none!important}
+.srow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--dim)}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.sw button{text-align:left;padding:8px 10px!important;border-width:2px!important;font-size:.9em;text-transform:none!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw button.cur-t{outline:3px solid var(--acc);outline-offset:1px}
+.shake{animation:shake .45s}
+@keyframes shake{10%{transform:translate(-6px,2px)}25%{transform:translate(5px,-3px);filter:hue-rotate(40deg) contrast(1.4)}40%{transform:translate(-4px,3px)}60%{transform:translate(4px,1px);filter:invert(.15)}80%{transform:translate(-2px,-1px)}}
+@media (max-width:600px){body{font-size:13px}#screen{padding:10px 12px 24px}#status{font-size:11px}#ttl{display:none}}
+@media (prefers-reduced-motion:reduce){.cur,.shake{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="rain"></canvas>
+<div id="win">
+  <div id="bar"><div class="l"><span class="dots"><i></i><i></i><i></i></span><span id="ttl"></span></div>
+    <div class="r"><button id="bTheme" aria-label="Choose terminal"></button><select id="sSpeed" aria-label="Typing speed"><option value="slow">slow</option><option value="normal">normal</option><option value="fast">fast</option><option value="instant">instant</option></select><select id="sDiff" aria-label="Difficulty"><option value="chill">chill</option><option value="normal">normal</option><option value="hardcore">hardcore</option></select><button id="bSound" aria-label="Sound menu"></button><span class="wbtn">─□✕</span></div></div>
+  <div id="screen"><div id="out"></div><div id="inl" hidden><span id="ps1"></span> <span id="typed"></span></div><div id="chips"></div></div>
+  <div id="status"></div>
+</div>
+<form id="ghostf"><input id="ghost" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Terminal input"></form>
+<div id="fx"></div><div id="crash" hidden></div>
+<script>
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s);
+const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const fmt=n=>(n<0?'-':'')+'$'+Math.abs(Math.round(n)).toLocaleString('en-US');
+const rep=(c,n)=>n>0?c.repeat(Math.round(n)):'';
+const padE=(s,n)=>String(s).padEnd(n),padS=(s,n)=>String(s).padStart(n);
+const bar=(v,max,w)=>{const k=Math.max(0,Math.min(w,Math.round(v/max*w)));return rep('█',k)+rep('░',w-k)};
+const rot=(s,k)=>{k=((k%s.length)+s.length)%s.length;return s.slice(k)+s.slice(0,k)};
+const lane=(pat,len,k)=>rot(pat.repeat(Math.ceil(len/pat.length)+1),k).slice(0,len);
+const pts=(P,x)=>{for(let k=1;k<P.length;k++)if(x<=P[k][0]){const a=P[k-1],b=P[k];return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0])}return P[P.length-1][1]};
+const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9.]+/g,' ').trim();
+const num=s=>{s=String(s||'').toLowerCase().replace(/[$,%\s]/g,'');let m=1;if(/k$/.test(s)){m=1000;s=s.slice(0,-1)}const v=parseFloat(s);return isNaN(v)?NaN:v*m};
+const store={get(){try{return JSON.parse(localStorage.getItem('ch11term')||'{}')}catch(e){return{}}},set(v){try{localStorage.setItem('ch11term',JSON.stringify(v))}catch(e){}}};
+const FRESH=()=>({theme:null,speed:'normal',sound:true,vol:60,snd:{},typeSnd:'auto',wave:'square',diff:'normal',name:'',xp:0,done:{},terms:{},bossWins:0,bankBest:0,v:2});
+let S=Object.assign(FRESH(),store.get());if(S.v!==2){S.v=2;S.sound=true}S.snd=S.snd||{};S.terms=S.terms||{};
+const save=()=>store.set(S);
+
+/* ================= themes ================= */
+const FONT='ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace';
+const FONT_DOS='"Perfect DOS VGA 437","Px437 IBM VGA8",Consolas,"Lucida Console","DejaVu Sans Mono","Courier New",monospace';
+const FAM={
+ unix:{snd:'click',more:'--More-- (enter)',boot:['[    0.000000] vault: booting teller-kernel 11.0.0','[  OK  ] Mounted /dev/chapter11.','[  OK  ] Started Financial Intermediation Service.','[  OK  ] Reached target Study Session.','$ ./teller --chapter 11',''],crash:['Segmentation fault (core dumped)','kernel: Oops: wrong answer [#1] SMP','Kernel panic - not syncing: attempted to kill understanding'],nf:c=>'bash: '+c+': command not found'},
+ zsh:{snd:'soft',more:'↵ continue',boot:['Last login: today on ttys011','$ ./teller --chapter 11','loading vault ████████████████ 100%',''],crash:['zsh: answer not found: that-one','[1]    4211 abort      ./brain --recall','zsh: exit 1'],nf:c=>'zsh: command not found: '+c},
+ dos:{snd:'blip',more:'Press any key to continue . . .',boot:['Starting DOS...','','HIMEM is testing vault memory...done.','C:\\>CD CH11','C:\\CH11>TELLER.EXE /CHAPTER:11',''],crash:['Not ready reading drive BRAIN','Abort, Retry, Fail? F','General failure reading answer'],nf:c=>'Bad command or file name'},
+ win:{snd:'click',more:'Press any key to continue . . .',boot:['Command Prompt [Version 10.0.19045]','(c) Teller Corporation. All rights reserved.','','C:\\Users\\student>teller --chapter 11',''],crash:["'answer' is not recognized as an internal or external command,",'operable program or correct answer.','ERRORLEVEL 1'],nf:c=>"'"+c+"' is not recognized as an internal or external command."},
+ ps:{snd:'click',more:'Press Enter to continue...:',boot:['PowerShell 7.4','Loading personal and vault profiles took 411ms.','PS C:\\ch11> Start-Teller -Chapter 11',''],crash:['Submit-Answer : The answer is not recognized as a correct answer.','    + CategoryInfo          : WrongAnswer: (:) [], BrainException','    + FullyQualifiedErrorId : NeedsMoreStudy'],nf:c=>c+' : The term is not recognized as the name of a command.'},
+ basic:{snd:'chip',more:'[RETURN]',boot:['READY.',''],crash:['?SYNTAX  ERROR IN ANSWER','?OUT OF BRAIN MEMORY  ERROR','BREAK IN 1100'],nf:c=>'?SYNTAX  ERROR'},
+ crt:{snd:'blip',more:'[RETURN]',boot:['TELLER-3000 MAINFRAME  REV 11','640K VAULT MEMORY ... OK','TAPE UNIT 1 ... CHAPTER 11 MOUNTED','RUN',''],crash:['?SYNTAX ERROR IN ANSWER','*** VAULT ALARM ***  *** VAULT ALARM ***','BREAK IN 1100'],nf:c=>'?UNKNOWN COMMAND'},
+ paper:{snd:'tele',more:'(return)',boot:['TELETYPE MODEL 11 -- LINE OPEN','CONNECTED TO TELLER AT 110 BAUD',''],crash:['*** PAPER JAM ***','ANSWER REJECTED. RIBBON SMOKING.','CARRIAGE RETURNED TO SENDER'],nf:c=>c+'?'},
+ game:{snd:'chip',more:'▼',boot:['','      T E L L E R   Q U E S T','         chapter eleven','','          PUSH  START',''],crash:['* WRONG! *','TELLER used DETENTION.','It hurt a lot.'],nf:c=>'...but nothing happened.'}
+};
+const TH={},TGROUPS=['Home computers & consoles','Classic PC','Mainframes & monitors','Operating systems','Developer favourites'];
+const th=(id,g,label,fam,c,o)=>{TH[id]=Object.assign({group:TGROUPS[g],label,c},FAM[fam],o||{})};
+// colours: bg fg dim accent ok err info bar barfg crash-bg crash-fg
+th('c64',0,'Commodore 64','basic','#40318d #b3adff #9088e0 #ffffff #aaff66 #ff8a8a #aaffee #7869c4 #40318d #7869c4 #fff',{title:'**** TELLER 64 BASIC V2 ****',ps1:'READY.\n',frame:'#7869c4',upper:1,boot:['','    **** TELLER 64 BASIC V2 ****','',' 64K RAM SYSTEM  38911 BASIC BYTES FREE','','READY.','LOAD "CHAPTER11",8,1','','SEARCHING FOR CHAPTER11','LOADING','READY.','RUN','']});
+th('apple2',0,'Apple II','basic','#000000 #33ff33 #1fae1f #ffffff #7dff7d #ffd24d #a8ffa8 #0c260c #33ff33 #33ff33 #000',{title:'TELLER ][',ps1:']',upper:1,fx:'crt',glow:'0 0 5px rgba(51,255,51,.45)',boot:['','              TELLER ][','',']PR#6',']RUN CHAPTER11','']});
+th('spectrum',0,'ZX Spectrum','basic','#d7d7d7 #000000 #555555 #0000d7 #007a1f #d70000 #a000a0 #000000 #ffffff #000 #d7d7d7',{title:'TELLER 48K',ps1:'&gt;',frame:'#d7d7d7',boot:['','','','','(c) 1982 Teller Research Ltd','','LOAD "ch11"','Program: ch11','']});
+th('bbc',0,'BBC Micro','basic','#000000 #ffffff #a8a8a8 #ffff00 #00ff00 #ff5555 #00ffff #1a1a1a #fff #ff0000 #fff',{title:'TELLER Computer 32K',ps1:'&gt;',boot:['TELLER Computer 32K','','Acorn-style DFS','','BASIC','','>CHAIN "CH11"','']});
+th('amiga',0,'Amiga Workbench','basic','#0055aa #ffffff #a9c9ee #ff8800 #b9ffb9 #ffb3a3 #ffd27a #ffffff #0055aa #000 #ff3b30',{title:'Workbench Screen · TellerShell',ps1:'1&gt;',snd:'blip',more:'(return)',boot:['TellerShell process 1','1> cd DF0:ch11','1> teller',''],crash:['Software Failure.  Press left mouse button to continue.','Guru Meditation #00000011.WRONGANS','1> '],nf:c=>'Unknown command '+c});
+th('gameboy',0,'Game Boy green','game','#9bbc0f #0f380f #306230 #0f380f #0f380f #0f380f #306230 #306230 #9bbc0f #0f380f #9bbc0f',{title:'TELLER QUEST',ps1:'▶',upper:1});
+th('nes',0,'8-bit console','game','#000000 #fcfcfc #bcbcbc #f8b800 #58d854 #f85838 #3cbcfc #d82800 #fcfcfc #0000a8 #fcfcfc',{title:'TELLER QUEST · 1 PLAYER',ps1:'▶',upper:1});
+th('dos',1,'MS-DOS','dos','#000000 #c0c0c0 #8a8a8a #ffff55 #55ff55 #ff5555 #55ffff #000080 #ffffff #0000aa #fff',{title:'MS-DOS Prompt - TELLER.EXE',ps1:'C:\\CH11&gt;',cur:'under',font:FONT_DOS});
+th('win95',1,'Windows 95 DOS box','dos','#000000 #c0c0c0 #8a8a8a #ffff55 #55ff55 #ff5555 #55ffff #000080 #ffffff #0000aa #fff',{title:'MS-DOS Prompt',ps1:'C:\\WINDOWS&gt;',cur:'under',font:FONT_DOS,frame:'#008080',chrome:'win',boot:['','Windows 95-style DOS box  [Version 4.00.950]','','C:\\WINDOWS>cd \\ch11','C:\\CH11>teller.exe','']});
+th('norton',1,'Blue file manager (Norton style)','dos','#0000aa #55ffff #7fd0e6 #ffff55 #7dff7d #ffb0b0 #ffffff #00aaaa #000000 #aa0000 #fff',{title:' Left    Files    Commands    Options    Right',ps1:'C:\\CH11&gt;',cur:'under',font:FONT_DOS});
+th('turbo',1,'Turbo IDE (yellow on blue)','dos','#0000aa #ffff55 #c9c98f #ffffff #55ffff #ffb0b0 #7dff7d #aaaaaa #000000 #aa0000 #fff',{title:' ≡  File  Edit  Search  Run  Compile  Debug  Options',ps1:'&gt;',cur:'under',font:FONT_DOS,boot:['Turbo Teller  Version 11.0','Compiling CH11.PAS ... 0 errors, 0 warnings','Running',''],crash:['Error 11: Wrong answer.','Runtime error 201 at 0011:1100.','Press any key to return to IDE']});
+th('cmd',1,'Windows Command Prompt','win','#0c0c0c #cccccc #8c8c8c #f9f1a5 #16c60c #e74856 #61d6d6 #ffffff #111111 #0078d7 #fff',{title:'Command Prompt',ps1:'C:\\Users\\student&gt;',chrome:'win',font:'Consolas,"Cascadia Mono","Lucida Console",'+FONT});
+th('ps',1,'PowerShell','ps','#012456 #eeedf0 #a9bddb #f9f1a5 #8df29a #ff9a90 #9cdcfe #1b1b1b #eeeeee #0b5ed7 #fff',{title:'Windows PowerShell',ps1:'PS C:\\ch11&gt;',chrome:'win'});
+th('ibm3270',2,'IBM 3270 mainframe','crt','#000000 #33cc66 #2a9a55 #ffffff #66d9ff #ff6b6b #5c9cff #06180c #33cc66 #33cc66 #000',{title:'TELLER/VM   ONLINE',ps1:'===&gt;',upper:1,fx:'crt',snd:'click',glow:'0 0 5px rgba(51,204,102,.4)',boot:['TELLER/VM ONLINE','LOGON STUDENT','READY; T=0.01/0.01','ISPF CH11',''],crash:['IEA995I SYMPTOM DUMP OUTPUT','SYSTEM COMPLETION CODE=0C7  REASON=WRONG ANSWER','ABEND S0C7']});
+th('phosphor',2,'VT100 green','crt','#020a03 #35f06a #1fa348 #c9ffd6 #8dffac #ff8a5c #7dffa0 #062a10 #35f06a #35f06a #020a03',{title:'TELLER-3000 MAINFRAME',ps1:'READY&gt;',fx:'crt',glow:'0 0 6px rgba(53,240,106,.5)'});
+th('amber',2,'Amber monitor','crt','#120900 #ffb000 #b47800 #ffe6ae #ffd35c #ff7a4d #ffc94d #2a1600 #ffb000 #ffb000 #120900',{title:'VAULT TERMINAL 11',ps1:'&gt;',fx:'crt',glow:'0 0 6px rgba(255,176,0,.45)',boot:['VAULT TERMINAL 11 ONLINE','SELF TEST ........ PASS','LINK TO TELLER .... ESTABLISHED',''],crash:['ERR 0x11: ANSWER REJECTED BY VAULT','LOCKING TELLER WINDOW ...','DUMPING STUDENT MEMORY ... 0 BYTES FOUND']});
+th('paper',2,'Teletype (paper)','paper','#f3efe4 #22201c #756f63 #0b4fa8 #136b3a #b3261e #6a3fa0 #ded8c8 #22201c #22201c #f3efe4',{title:'TELETYPE MODEL 11',ps1:'%',font:'"Courier Prime","Courier New",Courier,"DejaVu Sans Mono",monospace'});
+th('matrix',2,'Digital rain (hacker)','unix','#000000 #00ff41 #00a82b #d0ffd8 #7dff9a #ff6b6b #9dffb8 #001a06 #00ff41 #00ff41 #000',{title:'root@mainframe: /vault',ps1:'<i class="u">root@mainframe</i>:<i class="p">/vault</i>#',fx:'matrix',snd:'blip',glow:'0 0 6px rgba(0,255,65,.5)',boot:['Wake up, student...','The exam has you.','Follow the cash flow.','','Knock, knock.','']});
+th('linux',3,'Ubuntu','unix','#2c0a22 #eeeeec #b3a6ad #fce94f #8ae234 #ff6b6b #8fb8e8 #3c3b37 #dfdbd2 #000 #eee',{title:'student@ch11: ~',ps1:'<i class="u">student@ch11</i>:<i class="p">~</i>$',chrome:'mac'});
+th('kali',3,'Kali Linux','unix','#1b1d26 #e6e6e6 #8b90a0 #f2c94c #5ad17a #ff5f5f #2f9bff #11131a #e6e6e6 #000 #2f9bff',{title:'student@kali: ~',ps1:'<i class="p">┌──(</i><i class="u">student@kali</i><i class="p">)-[</i>~<i class="p">]</i>\n<i class="p">└─</i><i class="u">$</i>',chrome:'mac'});
+th('arch',3,'Arch Linux','unix','#0f1419 #d0d7de #7f8b99 #f0c674 #8fd18f #f07178 #1793d1 #0a0e12 #1793d1 #000 #1793d1',{title:'student@arch:~',ps1:'[<i class="p">student@arch</i> ~]$',boot:[':: running early hook [udev]',':: mounting /dev/chapter11',':: I use Arch, by the way.','$ ./teller --chapter 11','']});
+th('mac',3,'macOS Terminal (Basic)','zsh','#ffffff #111111 #6e6e73 #0b4fa8 #1a7f37 #c41e1e #8250df #e8e6e8 #333333 #111 #fff',{title:'ch11 — -zsh — 80×24',ps1:'student@MacBook ch11 %',chrome:'mac',snd:'click'});
+th('homebrew',3,'macOS Terminal (Homebrew)','zsh','#000000 #28fe14 #1aa80c #ffffff #7dff70 #ff6b6b #9dff94 #1c1c1c #cfcfcf #28fe14 #000',{title:'ch11 — -zsh — 80×24',ps1:'student@MacBook ch11 %',chrome:'mac',snd:'click'});
+th('zsh',4,'Oh My Zsh (Catppuccin)','zsh','#1e1e2e #cdd6f4 #8a90aa #f9e2af #a6e3a1 #f38ba8 #89dceb #313244 #cdd6f4 #11111b #f38ba8',{title:'ch11 — teller — 80×24',ps1:'<i class="u">➜</i> <i class="p">ch11</i> <i class="a">git:(main)</i>',cur:'bar',chrome:'mac'});
+const P1='<i class="p">~/ch11</i> <i class="u">❯</i>';
+th('dracula',4,'Dracula','zsh','#282a36 #f8f8f2 #8b93b8 #f1fa8c #50fa7b #ff6e6e #8be9fd #21222c #f8f8f2 #191a21 #ff79c6',{title:'teller — dracula',ps1:P1,cur:'bar',chrome:'mac'});
+th('solarized',4,'Solarized Dark','zsh','#002b36 #93a1a1 #7a9299 #b58900 #859900 #e5534b #2aa198 #073642 #93a1a1 #073642 #cb4b16',{title:'teller — solarized dark',ps1:P1,chrome:'mac'});
+th('sollight',4,'Solarized Light','zsh','#fdf6e3 #586e75 #7b8c91 #a45e00 #5f7400 #c0281f #1f6fb0 #eee8d5 #586e75 #073642 #fdf6e3',{title:'teller — solarized light',ps1:P1,chrome:'mac'});
+th('monokai',4,'Monokai','zsh','#272822 #f8f8f2 #a09f93 #e6db74 #a6e22e #f92672 #66d9ef #1e1f1c #f8f8f2 #1e1f1c #f92672',{title:'teller — monokai',ps1:P1,cur:'bar',chrome:'mac'});
+th('gruvbox',4,'Gruvbox','zsh','#282828 #ebdbb2 #a89984 #fabd2f #b8bb26 #fb4934 #83a598 #3c3836 #ebdbb2 #1d2021 #fb4934',{title:'teller — gruvbox',ps1:P1,chrome:'mac'});
+th('nord',4,'Nord','zsh','#2e3440 #d8dee9 #9aa5b8 #ebcb8b #a3be8c #e08a93 #88c0d0 #3b4252 #d8dee9 #242933 #88c0d0',{title:'teller — nord',ps1:P1,cur:'bar',chrome:'mac'});
+th('tokyo',4,'Tokyo Night','zsh','#1a1b26 #c0caf5 #7982a9 #e0af68 #9ece6a #f7768e #7dcfff #16161e #c0caf5 #16161e #f7768e',{title:'teller — tokyo night',ps1:P1,cur:'bar',chrome:'mac'});
+th('onedark',4,'One Dark','zsh','#282c34 #abb2bf #7f8794 #e5c07b #98c379 #e06c75 #61afef #21252b #abb2bf #21252b #e06c75',{title:'teller — one dark',ps1:P1,cur:'bar',chrome:'mac'});
+th('github',4,'GitHub Light','zsh','#ffffff #1f2328 #656d76 #0969da #1a7f37 #cf222e #8250df #f6f8fa #1f2328 #1f2328 #fff',{title:'teller — github light',ps1:P1,cur:'bar',chrome:'mac'});
+th('synthwave',4,"Synthwave '84",'zsh','#262335 #f2e9ff #9d8bc0 #fede5d #72f1b8 #ff6b78 #36f9f6 #1a1626 #ff7edb #1a1626 #ff7edb',{title:'t e l l e r   ·   s y n t h w a v e',ps1:'<i class="p">~/ch11</i> <i class="a">❯</i>',cur:'bar',chrome:'mac',glow:'0 0 8px rgba(255,126,219,.4)',bgimg:'linear-gradient(#262335 55%,#3a1f4d 85%,#5a2a5e)'});
+
+/* ================= sound ================= */
+let AC=null,MG=null,NB=null,lastTick=0;
+function ac(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.connect(AC.destination)}if(AC.state==='suspended')AC.resume();MG.gain.value=Math.pow(S.vol/100,1.5)*.7;return AC}
+function note(f,t,d,o={}){const os=AC.createOscillator(),g=AC.createGain(),t0=AC.currentTime+t;os.type=o.type||S.wave;os.frequency.setValueAtTime(f,t0);if(o.to)os.frequency.exponentialRampToValueAtTime(o.to,t0+d);
+  const v=(o.vol||.2)*(os.type==='sine'||os.type==='triangle'?1.7:1);g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(v,t0+.008);g.gain.exponentialRampToValueAtTime(.0001,t0+d);os.connect(g);g.connect(MG);os.start(t0);os.stop(t0+d+.03)}
+function noise(t,d,o={}){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*.6,AC.sampleRate);const ch=NB.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1}
+  const s=AC.createBufferSource(),g=AC.createGain(),fl=AC.createBiquadFilter(),t0=AC.currentTime+t;s.buffer=NB;fl.type=o.ft||'bandpass';fl.frequency.value=o.f||2000;g.gain.setValueAtTime(o.vol||.2,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+d);s.connect(fl);fl.connect(g);g.connect(MG);s.start(t0,Math.random()*.3,d+.03)}
+const seq=(ns,o={})=>{let t=0;for(const[f,d] of ns){if(f)note(f,t,d*1.5,o);t+=d}};
+const SFX={
+ advance:()=>note(740,0,.05,{vol:.11}),
+ correct:()=>seq([[880,.06],[1175,.06],[1568,.26]],{vol:.18}),
+ wrong:()=>seq([[233,.13],[175,.13],[131,.32]],{type:'sawtooth',vol:.15}),
+ streak:()=>seq([[523,.05],[659,.05],[784,.05],[1047,.05],[1319,.16]],{vol:.15}),
+ module:()=>seq([[523,.11],[659,.11],[784,.11],[1047,.2],[0,.05],[784,.1],[1047,.42]],{vol:.18}),
+ chapter:()=>{seq([[392,.12],[523,.12],[659,.12],[784,.26],[659,.12],[784,.12],[1047,.3],[0,.06],[880,.12],[988,.12],[1047,.7]],{vol:.18});seq([[131,.36],[196,.38],[262,.36],[0,.06],[220,.24],[262,.7]],{vol:.12,type:'triangle'})},
+ meltdown:()=>{note(440,0,1.1,{type:'sawtooth',to:40,vol:.18});noise(0,.9,{f:400,vol:.16,ft:'lowpass'})},
+ boot:()=>note(1000,0,.14,{type:'square',vol:.12}),
+ plot:()=>note(300+Math.random()*500,0,.02,{vol:.04}),
+ pickup:()=>seq([[1319,.04],[1760,.1]],{vol:.1}),
+ hit:()=>{noise(0,.12,{f:900,vol:.22});note(660,0,.12,{to:220,vol:.14})},
+ hurt:()=>{note(160,0,.3,{type:'sawtooth',to:60,vol:.18});noise(0,.2,{f:300,ft:'lowpass',vol:.18})},
+ grant:()=>seq([[784,.06],[1047,.06],[1568,.18]],{vol:.15}),
+ deny:()=>seq([[196,.1],[0,.03],[196,.2]],{type:'square',vol:.13}),
+ select:()=>note(520,0,.04,{vol:.1}),
+ rewind:()=>note(900,0,.5,{to:200,vol:.09,type:'triangle'}),
+ cash:()=>{noise(0,.05,{f:6000,vol:.1,ft:'highpass'});seq([[1568,.05],[2093,.2]],{vol:.11})}
+};
+const CAT={advance:'advance',correct:'correct',grant:'correct',hit:'correct',cash:'correct',wrong:'wrong',deny:'wrong',hurt:'wrong',meltdown:'crash',module:'module',chapter:'chapter',streak:'fx',plot:'fx',pickup:'fx',select:'fx',boot:'fx',rewind:'fx'};
+function play(n,force){if(!force&&(!S.sound||!S.vol||S.snd[CAT[n]]===false))return;try{ac();SFX[n]()}catch(e){}}
+function tick(force){if(!force&&(!S.sound||!S.vol||S.snd.typing===false))return;const st=S.typeSnd==='auto'?(TH[S.theme]&&TH[S.theme].snd||'blip'):S.typeSnd;if(st==='off')return;
+  try{ac();const now=AC.currentTime;if(!force&&now-lastTick<.035)return;lastTick=now;
+   if(st==='blip')note(680+Math.random()*240,0,.018,{type:'square',vol:.045});
+   else if(st==='chip')note(Math.random()<.5?440:523,0,.03,{type:'square',vol:.05});
+   else if(st==='soft')note(500+Math.random()*80,0,.03,{type:'sine',vol:.06});
+   else if(st==='click')noise(0,.014,{f:3500+Math.random()*1500,vol:.15,ft:'highpass'});
+   else if(st==='tele'){noise(0,.03,{f:1200,vol:.18});note(110,0,.035,{type:'square',vol:.06})}}catch(e){}}
+
+/* ================= panels (sound menu, terminal gallery) ================= */
+let panelEl=null,panelDone=null;
+function openPanel(title,build){closePanel();const p=el('div','panel'),b=el('div','box');b.innerHTML=`<h2><span>${title}</span><button type="button" data-x>[x] close</button></h2><div class="pb"></div>`;p.append(b);document.body.append(p);panelEl=p;
+  p.addEventListener('click',e=>{if(e.target===p||e.target.closest('[data-x]'))closePanel()});build(b.querySelector('.pb'));return new Promise(r=>panelDone=r)}
+function closePanel(){if(!panelEl)return;panelEl.remove();panelEl=null;const d=panelDone;panelDone=null;d&&d();if(mode==='ask'&&!matchMedia('(pointer:coarse)').matches)ghost.focus()}
+const SROWS=[['typing','Typing',()=>{let k=0;const t=setInterval(()=>{tick(true);if(++k>12)clearInterval(t)},60)}],['advance','Continue to the next part',()=>play('advance',1)],['correct','Correct answer',()=>play('correct',1)],['wrong','Wrong answer',()=>play('wrong',1)],['crash','Meltdown / game over',()=>play('meltdown',1)],['module','Module complete',()=>play('module',1)],['chapter','Whole chapter done / boss beaten',()=>play('chapter',1)],['fx','Drawing, term pickups, streaks',()=>{play('pickup',1);setTimeout(()=>play('streak',1),260)}]];
+function soundPanel(){return openPanel('SOUND MENU',b=>{const draw=()=>{
+  b.innerHTML=`<div class="prow"><button type="button" id="pOn" class="${S.sound?'on':''}">${S.sound?'[x] sound ON':'[ ] sound OFF'}</button><span>volume</span><span class="lvl">${Array.from({length:10},(_,i)=>`<button type="button" data-l="${(i+1)*10}" aria-label="volume ${(i+1)*10}%">${S.vol>=(i+1)*10?'█':'░'}</button>`).join('')}</span><b>${S.vol}%</b></div>
+  <div class="prow"><input type="range" id="pVol" min="0" max="100" step="5" value="${S.vol}" aria-label="Volume"></div>
+  <h3>Typing voice</h3><div class="prow">${[['auto','auto (matches terminal)'],['blip','blip'],['chip','8-bit chip'],['click','mechanical keys'],['tele','teletype'],['soft','soft'],['off','silent']].map(x=>`<button type="button" data-ty="${x[0]}" class="${S.typeSnd===x[0]?'on':''}">${x[1]}</button>`).join('')}</div>
+  <h3>Tone</h3><div class="prow">${[['square','8-bit'],['triangle','mellow'],['sine','pure'],['sawtooth','buzzy']].map(x=>`<button type="button" data-wv="${x[0]}" class="${S.wave===x[0]?'on':''}">${x[1]}</button>`).join('')}</div>
+  <h3>Which sounds play</h3>${SROWS.map((r,i)=>`<div class="srow"><label><input type="checkbox" data-c="${r[0]}" ${S.snd[r[0]]===false?'':'checked'}> ${r[1]}</label><button type="button" data-t="${i}">▶ test</button></div>`).join('')}
+  <div class="prow" style="margin-top:14px"><button type="button" id="pAll">▶ play them all</button><button type="button" data-x>done</button></div>`;
+  b.querySelector('#pOn').onclick=()=>{S.sound=!S.sound;save();syncUI();draw();play('select')};
+  b.querySelectorAll('[data-l]').forEach(x=>x.onclick=()=>{S.vol=+x.dataset.l;S.sound=true;save();syncUI();draw();play('correct',1)});
+  b.querySelector('#pVol').oninput=e=>{S.vol=+e.target.value;save();syncUI();b.querySelector('.prow b').textContent=S.vol+'%';b.querySelectorAll('[data-l]').forEach(x=>x.textContent=S.vol>=+x.dataset.l?'█':'░');tick(true)};
+  b.querySelectorAll('[data-ty]').forEach(x=>x.onclick=()=>{S.typeSnd=x.dataset.ty;save();draw();SROWS[0][2]()});
+  b.querySelectorAll('[data-wv]').forEach(x=>x.onclick=()=>{S.wave=x.dataset.wv;save();draw();play('correct',1)});
+  b.querySelectorAll('[data-c]').forEach(x=>x.onchange=()=>{S.snd[x.dataset.c]=x.checked;save()});
+  b.querySelectorAll('[data-t]').forEach(x=>x.onclick=()=>SROWS[+x.dataset.t][2]());
+  b.querySelector('#pAll').onclick=()=>SROWS.forEach((r,i)=>setTimeout(r[2],i*1100))};draw()})}
+function themePanel(first){return openPanel(first?'CHOOSE YOUR TERMINAL':'TERMINALS',b=>{const draw=()=>{
+  b.innerHTML=(first?'<div class="prow">Pick how TELLER looks and sounds. You can change it any time from the top bar.</div>':'')+TGROUPS.map(g=>`<h3>${g}</h3><div class="sw">${Object.entries(TH).filter(([k,t])=>t.group===g).map(([k,t])=>{const c=t.c.split(' ');return`<button type="button" data-th="${k}" class="${S.theme===k?'cur-t':''}" style="background:${c[0]};color:${c[1]};border-color:${c[1]}"><span style="color:${c[3]}">▌</span> ${t.label}</button>`}).join('')}</div>`).join('')+'<div class="prow" style="margin-top:14px"><button type="button" data-x>done</button></div>';
+  b.querySelectorAll('[data-th]').forEach(x=>x.onclick=()=>{setTheme(x.dataset.th);play('select');draw()})};draw()})}
+
+/* ================= terminal engine ================= */
+const out=$('#out'),screen=$('#screen'),inl=$('#inl'),ps1El=$('#ps1'),typedEl=$('#typed'),chipsEl=$('#chips'),ghost=$('#ghost'),win=$('#win'),crashEl=$('#crash'),statusEl=$('#status');
+const cur=el('span','cur');
+const SPEED={slow:{d:30,per:1,p:9},normal:{d:15,per:1,p:8},fast:{d:8,per:3,p:3},instant:{d:0,per:1,p:0}};
+const ABORT={abort:true};
+let mode='idle',resolver=null,skip=false,turbo=false,auto=false,ctx='boot',loc='',integrity=100,streak=0,timer=null,hist=[],hi=0;
+const scroll=()=>{screen.scrollTop=screen.scrollHeight};
+function setMode(m){mode=m;document.body.classList.toggle('typing',m==='typing')}
+function updateStatus(){statusEl.innerHTML=`<span>[ch11] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${timer}s</span> · `:''}integrity ${bar(integrity,100,5)} ${integrity}% · streak ${streak} · xp ${S.xp} · terms ${Object.keys(S.terms).length}/${GLOSS.length} · ${S.diff}</span>`}
+const TALIAS={'screen and certify':'screening','monitor':'monitoring','diversifying':'diversification'};
+function collect(txt){const t=txt.toLowerCase();let got=false;for(const g of GLOSS){if(S.terms[g.n])continue;if(TALIAS[t]===g.n||new RegExp('\\b'+g.n+'s?\\b').test(t)){S.terms[g.n]=1;got=true}}if(got){save();play('pickup');updateStatus()}}
+
+async function type(text,o={}){
+  const ln=el('div','ln '+(o.cls||''));out.append(ln);
+  if(o.who){const w=el('span','who');w.textContent='TELLER ▸ ';ln.append(w)}
+  const sp=SPEED[S.speed],per=sp.per*(turbo||o.turbo?10:1);let n=0;const prev=mode;setMode('typing');
+  for(const seg of String(text).split(/(\*[^*]+\*)/)){
+    if(!seg)continue;const b=seg[0]==='*'&&seg.length>2;const holder=b?el('b'):document.createTextNode('');ln.append(holder);
+    const node=b?holder.appendChild(document.createTextNode('')):holder;ln.append(cur);
+    for(const ch of b?seg.slice(1,-1):seg){node.appendData(ch);
+      if(!skip&&sp.d){if(++n%per===0){if(ch!==' ')tick();scroll();await sleep(sp.d)}
+        if(!turbo&&!o.turbo&&'.?!:'.includes(ch))await sleep(sp.d*sp.p)}}
+    if(b&&o.who!==undefined)collect(seg.slice(1,-1));
+  }
+  ln.append(cur);setMode(prev==='typing'?'idle':prev);scroll();return ln;
+}
+async function say(lines,o={}){skip=false;lines=[].concat(lines);for(let i=0;i<lines.length;i++)await type(lines[i],{cls:'say'+(i?' cont':''),who:i===0,turbo:o.turbo})}
+function wait(){if(auto)return Promise.resolve();return new Promise((res,rej)=>{skip=false;const ln=el('div','ln more');ln.textContent=TH[S.theme].more+' ';ln.append(cur);out.append(ln);scroll();setMode('wait');
+  resolver=v=>{setMode('idle');const p=ln.previousElementSibling;ln.remove();if(p&&p.tagName!=='PRE')p.append(cur);if(v){play('advance');res()}else rej(ABORT)}})}
+function rawAsk(o={}){return new Promise(res=>{skip=false;setMode('ask');if(o.ans!=null)window.__ans=o.ans;
+  ps1El.innerHTML=o.ps||TH[S.theme].ps1;typedEl.textContent='';ghost.value='';inl.hidden=false;inl.append(cur);hi=hist.length;
+  chipsEl.innerHTML='';(o.chips||[]).forEach(c=>{const b=el('button');b.type='button';b.textContent=c;b.onclick=e=>{e.stopPropagation();if(mode==='ask')resolver(c)};chipsEl.append(b)});
+  let tm=null;if(o.timeout){timer=o.timeout;updateStatus();tm=setInterval(()=>{if(panelEl)return;timer--;updateStatus();if(timer<=0)resolver(null)},1000)}
+  resolver=v=>{clearInterval(tm);timer=null;setMode('idle');inl.hidden=true;chipsEl.innerHTML='';
+    const ln=el('div','ln');ln.innerHTML=ps1El.innerHTML+' ';ln.append(document.createTextNode(v==null?'(time up)':v));ln.append(cur);out.append(ln);
+    if(v)hist.push(v);updateStatus();scroll();res(v)};
+  scroll();if(!panelEl&&!matchMedia('(pointer:coarse)').matches)ghost.focus();})}
+async function askQ(o){for(;;){const v=await rawAsk(o);if(v===null)return null;const[c,...a]=v.toLowerCase().split(/\s+/);
+  if(['quit','exit','menu',':q','q'].includes(c))throw ABORT;
+  const s=SYS[SALIAS[c]||c];if(s){await s(a);continue}
+  return v}}
+
+ghost.addEventListener('input',()=>{typedEl.textContent=ghost.value;scroll()});
+$('#ghostf').addEventListener('submit',e=>{e.preventDefault();if(mode==='ask'&&!panelEl)resolver(ghost.value.trim())});
+document.addEventListener('keydown',e=>{
+  if(panelEl){if(e.key==='Escape')closePanel();return}
+  if(e.target.matches&&e.target.matches('select'))return;
+  if(mode==='crash'){e.preventDefault();resolver();return}
+  if(mode==='typing'){if(e.key==='Enter'||e.key===' '){skip=true;e.preventDefault()}return}
+  if(mode==='wait'){if(e.key==='q'||e.key==='Escape')resolver(false);else if(!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();resolver(true)}return}
+  if(mode==='ask'){
+    if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();hi=Math.max(0,Math.min(hist.length,hi+(e.key==='ArrowUp'?-1:1)));ghost.value=hist[hi]||'';typedEl.textContent=ghost.value;return}
+    if(document.activeElement!==ghost){if(e.key==='Enter'){e.preventDefault();resolver(ghost.value.trim())}else if(!e.ctrlKey&&!e.metaKey)ghost.focus()}}
+});
+screen.addEventListener('click',e=>{if(e.target.closest('button,a,select'))return;if(String(getSelection()))return;
+  if(mode==='typing')skip=true;else if(mode==='wait')resolver(true);else if(mode==='ask')ghost.focus()});
+crashEl.addEventListener('click',()=>{if(mode==='crash')resolver()});
+
+/* ================= figures: the cursor draws them, then they keep playing ================= */
+function color(s){return esc(s).replace(/\$[\d,]+(\.\d+)?k?/g,m=>`<i class="m">${m}</i>`).replace(/\b(FUNDED|PEACH|OK|STAY|GRANTED|UNDERWRITTEN)\b/g,'<i class="g">$1</i>').replace(/\b(LEMON|BAD|DEFAULT|WITHDRAWN|LEAVE|INSOLVENT|DENIED|SHUT|COLLAPSE|BONK)\b|#/g,m=>`<i class="r">${m}</i>`)}
+const LIVE=[],REDUCED=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const IO='IntersectionObserver' in window?new IntersectionObserver(es=>es.forEach(e=>{e.target._vis=e.isIntersecting})):null;
+setInterval(()=>{if(document.hidden)return;const now=performance.now();for(let k=LIVE.length-1;k>=0;k--){const L=LIVE[k];if(!L.pre.isConnected){LIVE.splice(k,1);continue}if(L.pre._vis===false||now<L.next)continue;
+  L.i++;if(L.i>L.f.n){L.i=0;L.f.reset&&L.f.reset()}L.pre.innerHTML=color(L.f.r(L.i));L.next=now+(L.i===L.f.n?(L.f.hold==null?2400:L.f.hold):1000/L.f.fps)}},40);
+async function fig(f,inst){
+  const pre=el('pre','fig');out.append(pre);let mx=1;const stp=Math.max(1,Math.floor(f.n/30));for(let i=0;i<=f.n;i+=stp)mx=Math.max(mx,f.r(i).split('\n').length);mx=Math.max(mx,f.r(f.n).split('\n').length);pre.style.minHeight=(mx*1.2)+'em';
+  const prev=mode;setMode('typing');inst=inst||!SPEED[S.speed].d;
+  if(!inst&&!skip){const first=f.r(0),step=Math.max(2,Math.ceil(first.length/50));let c=0;for(let k=0;k<first.length;k+=step){pre.innerHTML=color(first.slice(0,k))+'█';scroll();if(c++%3===0)play('plot');await sleep(14);if(skip)break}}
+  let i=0;pre.innerHTML=color(f.r(0));scroll();
+  if(!REDUCED&&!inst){const intro=f.intro==null?f.n:f.intro;while(i<intro&&!skip){await sleep(1000/f.fps);i++;pre.innerHTML=color(f.r(i))}}
+  if(f.n&&!f.once&&!REDUCED){IO&&IO.observe(pre);LIVE.push({pre,f,i,next:performance.now()+(i>=f.n?(f.hold==null?2400:f.hold):1000/f.fps)});if(LIVE.length>48){const o=LIVE.shift();o.pre.innerHTML=color(o.f.r(o.f.n))}}
+  else pre.innerHTML=color(f.r(f.n));
+  setMode(prev==='typing'?'idle':prev);scroll();
+}
+const T11=[['France',63.3,45.2,86.7],['Germany',39.0,44.3,96.3],['Italy',31.1,30.5,69.8],['Japan',74.5,57.7,171.4],['UK',113.5,15.1,129.5],['USA',111.2,92.6,158.9],['Argentina',13.6,4.3,14.1],['Brazil',34.5,17.8,42.3],['China',35.7,18.6,103.0],['India',49.2,1.5,33.5],['Russia',34.9,5.1,25.7]];
+function inaCalc(type,stake){stake=Math.max(0,Math.min(10000,stake));const o=10000-stake,R=o*1.11,pay=V=>type==='debt'?[Math.max(0,V-R),Math.min(V,R)]:[stake/10000*V,(1-stake/10000)*V];return{o,R,w:pay(100000),s:pay(10000),gw:pay(500000),gl:pay(0)}}
+const CAR=['     ____','  __/_||_\\__'," '-(o)--(o)-'"];
+const HOUSE=['  /\\ ',' /__\\',' |[]|'];
+const LOGO=[' ▀█▀ █▀▀ █   █   █▀▀ █▀█','  █  ██▄ █▄▄ █▄▄ ██▄ █▀▄'];
+const FIG={
+ logo:()=>({n:18,fps:12,hold:3500,r:i=>LOGO.map(l=>[...l].map((c,x)=>(x===i*2-4||x===i*2-3)&&c!==' '?'▒':c).join('')).concat('',' chapter 11 · the economics of',' financial intermediation').join('\n')}),
+ flow:()=>({n:40,fps:12,hold:0,r:i=>{const a=o=>lane('$────',12,-(i+o))+'▶';return[' SAVERS               BANK              BORROWERS','                   ┌──────────┐',`  (o) ${a(0)}│          │${a(2)} [Mort]`,`  (o) ${a(3)}│  VAULT   │${a(0)} [Firm]`,`  (o) ${a(1)}│          │${a(4)} [Gov]`,'                   └──────────┘','       deposits ──▶               loans ──▶'].join('\n')}}),
+ direct:()=>({n:66,fps:12,hold:0,intro:36,r:i=>[' SAVER                                 BORROWER',`  (o)  ${lane('$─────',30,-i)}▶  [Firm]`,`  (o)  ◀${lane('─────[bond]',30,i)}  [Firm]`,'        money goes right · securities come back'].join('\n')}),
+ crisis:()=>({n:24,fps:6,hold:2600,r:i=>{const k=Math.min(8,Math.floor(i/2)),u=3+Math.min(22,i*1.1),o=100-Math.min(31,i*1.5);return[' 1930s  '+Array.from({length:8},(_,j)=>j<k?'[SHUT]':'[BANK]').join(''),' UNEMPLOYMENT '+padE(rep('█',u),27)+Math.round(u)+'%',' OUTPUT       '+padE(rep('█',o/4)+rep('░',(100-o)/4),27)+(o<100?'-'+Math.round(100-o)+'%':'')].join('\n')}}),
+ scatter:()=>{let s=7;const rnd=()=>(s=(s*16807)%2147483647)/2147483647,W=42,H=8,P=Array.from({length:46},()=>{const x=Math.pow(rnd(),1.6),y=Math.max(0,Math.min(1,.15+.62*x+(rnd()-.5)*.55*(.4+x)));return[Math.round(x*(W-1)),H-1-Math.round(y*(H-1))]});
+   return{n:36,fps:9,hold:3200,r:i=>{const g=Array.from({length:H},()=>rep(' ',W).split(''));if(i>24){const k=(i-24)/10;for(let x=0;x<W*k&&x<W;x++){const y=H-1-Math.round((.15+.62*x/(W-1))*(H-1));if(g[y])g[y][x]='·'}}P.slice(0,i*2).forEach(([x,y])=>g[y][x]='o');
+    return[' GDP per person ↑     each o = a country (sketch)'].concat(g.map(r=>' |'+r.join('')),[' +'+rep('─',W)+'▶',' credit to private sector ÷ GDP   correlation ≈ 0.6']).join('\n')}}},
+ ratio:()=>{const rows=T11.map(c=>[c[0],c[3]/(c[1]+c[2])]).sort((a,b)=>b[1]-a[1]);return{n:rows.length-1,fps:9,hold:3500,r:i=>[' LOANS ÷ SECURITIES = C ÷ (A + B)   1990-2016 avg'].concat(rows.slice(0,i+1).map(r=>' '+padE(r[0],10)+padS(r[1].toFixed(2),5)+' '+rep('█',r[1]*14)+(r[1]>1?'  loans bigger':''))).join('\n')}},
+ ebay:()=>({n:30,fps:8,hold:2800,r:i=>{const k=Math.min(100,i*4);return[' MORT NEEDS $100,000',' ── alone: 100 strangers x $1,000 ──','  contracts to write: '+padS(k,3)+'  '+rep('=',k/4),'  strangers asking "can he repay?": '+padS(k,3),'  '+rep('?',k/2.5),' ── through a bank ──',i>=27?'  1 contract · checked once · by an expert':'  ...'].join('\n')}}),
+ five:()=>{const J=['POOL','SAFEKEEP','LIQUIDITY','DIVERSIFY','INFORMATION'],D=['many small deposits → one big loan','keep it safe, move it, track it','cash whenever you want it','a little in many baskets','who can be trusted?'];return{n:20,fps:2.2,hold:0,intro:5,r:i=>{const a=i%5,b=j=>a===j?'▶'+J[j]+'◀':' '+J[j]+' ';
+   return[' '+b(0)+' '+b(1)+' '+b(2)+' '+b(3),'  └───── jobs 1-4 cut TRANSACTIONS costs ─────┘',' '+b(4),'  └ job 5 cuts INFORMATION costs',` job ${a+1}: ${D[a]}`].join('\n')}}},
+ pool:(loan=100000,dep=1000)=>{const n=loan/dep;return{n:25,fps:14,hold:2600,r:i=>{const k=Math.min(100,i*4),L=[` ${Math.round(n).toLocaleString()} SAVERS x ${fmt(dep)} EACH${n===100?'':'   (each $ = '+(n/100).toLocaleString()+' savers)'}`];
+   for(let r=0;r<5;r++){let s='  ';for(let c=0;c<20;c++)s+=(r*20+c<k?'·':'$')+' ';L.push(s)}
+   L.push(`  POOL [${bar(k,100,20)}] ${fmt(loan*k/100)}`,`  LOAN OF ${fmt(loan)}: ${k<100?'waiting...':'FUNDED'}`);return L.join('\n')}}},
+ goldsmith:()=>({n:60,fps:10,hold:1500,intro:44,r:i=>{const L=[' YOU '+lane('(gold)────',20,-i)+'▶ [GOLDSMITH]  1 safekeeping'];if(i>=14)L.push(' YOU ◀'+lane('──[receipt]──',20,i)+' [GOLDSMITH]  2 a receipt');if(i>=28)L.push('     BORROWER ◀'+lane('──(idle gold)',11,i)+' [GOLDSMITH]  3 lending');if(i>=42)L.push(' receipts trade like money · idle gold is lent: a bank');return L.join('\n')}}),
+ scale:()=>{const ns=[1,10,100,1000,10000,100000];return{n:5,fps:3,hold:3200,r:i=>[' CUSTOMERS   COST PER CUSTOMER'].concat(ns.slice(0,i+1).map(n=>{const c=5000/n+2;return padS(n.toLocaleString(),10)+'  '+padS('$'+c.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),10)+'  '+rep('█',Math.max(1,Math.log10(c)/3.7*22))})).join('\n')}},
+ liquidity:(R=18)=>{R=Math.max(2,Math.min(30,Math.round(R)));let ser=[];const gen=()=>{ser=Array.from({length:110},()=>{let w=0;for(let k=0;k<100;k++)w+=Math.random()<.1;return w})};gen();const W=32,lv=[...new Set([24,20,16,12,8,4,R])].sort((a,b)=>b-a);
+   return{n:70,fps:7,hold:0,intro:16,reset:gen,r:i=>{const w=ser.slice(i,i+W);let short=0;for(let k=0;k<i+W;k++)if(ser[k]>R)short++;
+    return[' daily withdrawals, % of deposits'].concat(lv.map(l=>padS(l,3)+'%|'+w.map(x=>x>=l?'█':l===R?'─':' ').join('')+(l===R?' ← liquid reserve':'')),'     day '+padS(i+W,3)+' · days the bank ran short: '+short).join('\n')}}},
+ diversify:(N=50,p=10)=>{N=Math.max(2,Math.min(54,Math.round(N)));const Y=6;let big,small;const gen=()=>{big=[];small=[];for(let y=0;y<Y;y++){big.push(Math.random()<p/100);small.push(Array.from({length:N},()=>Math.random()<p/100))}if(!big.some(Boolean))big[1+Math.floor(Math.random()*4)]=true};gen();const loss=y=>Math.round(small[y].filter(Boolean).length/N*100);
+   return{n:Y-1,fps:1.1,hold:2800,reset:gen,r:i=>{let wb=0,ws=0;for(let y=0;y<=i;y++){if(big[y])wb=100;ws=Math.max(ws,loss(y))}
+    return[` YEAR ${i+1} of ${Y} · each borrower defaults ${p}% of the time`,` ONE BIG LOAN:    ${big[i]?'[#] DEFAULT':'[o] repaid '}          lost ${padS(big[i]?100:0,3)}%`,` ${padE(N+' SMALL LOANS:',16)}                      lost ${padS(loss(i),3)}%`,'  '+small[i].map(d=>d?'#':'o').join(''),` worst year so far:  one loan ${wb}%  ·  ${N} loans ${ws}%`].join('\n')}}},
+ gap:()=>({n:12,fps:4,hold:0,intro:6,r:i=>{const q=['?','??','???'][i%3],b=n=>bar(n,8,8);return[' WHAT THE BORROWER KNOWS     WHAT THE LENDER SEES',' plans    '+b(8)+'           plans    '+b(2+(i%4===0?1:0))+' '+q,' risk     '+b(8)+'           risk     '+b(1+(i%3===0?1:0))+' '+q,' honesty  '+b(8)+'           honesty  '+b(i%5===0?1:0)+' '+q,'          the information is ASYMMETRIC'].join('\n')}}),
+ timeline:()=>({n:44,fps:14,hold:2800,r:i=>{const p=i<17?i:Math.min(45,i+8);let t=rep('─',17)+'[ DEAL ]'+rep('─',21);t=t.slice(0,p)+'●'+t.slice(p+1);const R=i>=17,row=(a,b)=>' '+padE(a,27)+(R?b:'');
+   return[' '+t+'▶ time',row((R?'  ':'▶ ')+'BEFORE the deal','▶ AFTER the deal'),row('  ADVERSE SELECTION','  MORAL HAZARD'),row('  hidden ATTRIBUTES','  hidden ACTIONS'),row('  "who are you, really?"','  "what are you doing?"'),row('  fix: SCREEN','  fix: MONITOR')].join('\n')}}),
+ lemons:(share=50,min=20000)=>{share=Math.max(0,Math.min(100,share));const offer=(share*20000+(100-share)*10000)/100,gone=offer<min;return{n:44,fps:10,hold:3000,r:i=>{const x=gone&&i>22?(i-22)*3:0,L=[` PEACH  worth $20,000 · owner's minimum ${fmt(min)}`];
+   if(x>50)L.push('','   ...gone. WITHDRAWN from the market.','');else CAR.forEach(c=>L.push((rep(' ',x)+c).slice(0,54)));
+   L.push(' LEMON  worth $10,000 · owner would take $8,000',...CAR);
+   if(i>=6)L.push(` BUYER: "Can't tell them apart. I'll pay the average:"`);
+   if(i>=11)L.push(`         ${share}% x $20,000 + ${100-share}% x $10,000 = ${fmt(offer)}`);
+   if(i>=18)L.push(gone?` PEACH OWNER: "${fmt(offer)}? No thanks."`:` PEACH OWNER: "${fmt(offer)} will do." Both cars sell.`);
+   if(i>=42&&gone)L.push(' Only the LEMON is left, and buyers know it: $10,000.');return L.join('\n')}}},
+ bonds:(rf=5,a=2,b=6,sh=50)=>{const pool=rf+(sh*a+(100-sh)*b)/100,sc=Math.min(2,24/(rf+b));const row=(l,v,i)=>' '+padE(l,22)+padS(v.toFixed(2)+'%',6)+' '+rep('█',v*sc*i/12);
+   return{n:12,fps:14,hold:3500,r:i=>[row('fair rate, SAFE firm',rf+a,i),row('everyone is charged',pool,i),row('fair rate, RISKY firm',rf+b,i)].concat(i<12?[]:[` SAFE firms overpay by ${(pool-rf-a).toFixed(2)} points → they LEAVE`,` RISKY firms save ${(rf+b-pool).toFixed(2)} points   → they STAY`]).join('\n')}},
+ card:()=>({n:26,fps:5,hold:2600,r:i=>{const m=Math.min(24,i),rate=m<6?29:m<12?24:m<18?19:14;return[' YOUR CREDIT CARD        (illustrative rates)',' month '+padS(m,2)+' · on-time payments: '+rep('+',m/2),' history   ['+bar(m,24,24)+']',' issuer sees: '+(m<6?'???  → assumes the worst':m<18?'a short track record':'a proven good risk'),' your rate:  '+rate+'%  '+rep('█',rate/1.5)].join('\n')}}),
+ freerider:()=>({n:12,fps:3,hold:3000,r:i=>{const k=Math.min(9,i);return[' A RESEARCH REPORT · costly to produce',' (o) pays $600 ──▶ [ REPORT ]',' free riders:  '+rep('(o) ',k),' paying: 1 · reading for free: '+k," researcher's income   █",' value to all readers  '+rep('█',1+k*2)].join('\n')}}),
+ collateral:()=>({n:36,fps:9,hold:2400,r:i=>{const x=i<18?0:Math.min(30,(i-18)*2);return[' BORROWER'+rep(' ',30)+'LENDER',i<14?'   (o)   '+lane('$────',26,-i)+'▶  (o)':'   (o)   payments stop: DEFAULT              (o)',...HOUSE.map(h=>rep(' ',2+x)+h),i<18?'  the house is pledged as collateral':i<34?'  the lender takes the house...':'  ...sells it, and recovers the loan.'].join('\n')}}),
+ downpay:()=>({n:10,fps:4,hold:3000,r:i=>{const p=100-2*i,row=(l,v,t)=>' '+padE(l,16)+padE(rep('█',v/5),21)+t;return[row('HOUSE PRICE',p,'$'+p+'k'),row('LOAN, 10% down',90,p<90?'← loan > house!':''),row('LOAN, 30% down',70,p>=70?'← still covered':''),' price falls '+(100-p)+'% · the down payment is the cushion'].join('\n')}}),
+ networth:(target=-30)=>{target=Math.max(-60,Math.min(20,target));const n=Math.max(1,Math.round(Math.abs(target)/2));return{n,fps:8,hold:3000,r:i=>{const d=Math.round(target*i/n),A=100+d,N=A-60;
+   return[` PRICE LEVEL: ${d>0?'+':''}${d}%`,' ASSETS     '+padE(rep('█',A/5)+rep('░',Math.max(0,(100-A)/5)),24)+' $'+A,' DEBT       '+padE(rep('█',12),24)+' $60 ← fixed in dollars',' NET WORTH  '+padE(rep('█',Math.max(0,N/5)),24)+(N>0?` $${N}`:` -$${-N} ← INSOLVENT`)+(i===n&&d?'  (was $40)':'')].join('\n')}}},
+ potato:()=>{const pos=[4,19,31,42],cap=['originator:  "Relax the standards. Lend more."','distributor: "Package them up. No need to check."','raters:      "AAA. Barely looked."','investor:    "It says AAA. Good enough." (free rider)'];
+   return{n:8,fps:1.6,hold:3500,r:i=>{const s=Math.min(3,Math.floor(i/2));return[' ORIGINATOR ─▶ DISTRIBUTOR ─▶ RATERS ─▶ INVESTOR',rep(' ',pos[s])+'(*)'+(i>=8?'  ← HOT':'')].concat(cap.slice(0,s+1).map(c=>' '+c),i>=8?[' House prices fall. The collateral no longer covers',' the loans. Whoever holds the potato gets burned.']:[]).join('\n')}}},
+ ponzi:()=>({n:16,fps:2,hold:2600,r:i=>{const R=Math.min(5,Math.floor(i/2)+1),dead=i>=12,L=[' PONZI SCHEME · fraud is moral hazard at its worst'];for(let r=0;r<R;r++)L.push(rep(' ',2+(5-r)*2)+Array.from({length:r+1},()=>dead?'(x)':'(o)').join(' ')+(dead?'':r===R-1?'  ← new money in':r===R-2?'  ← gets "paid"':''));
+   L.push(dead?' no new investors → nothing to pay with → COLLAPSE':` round ${R}: the newest row's cash pays the row above`);return L.join('\n')}}),
+ ina:(type='equity',stake=1000)=>{const c=inaCalc(type,stake),row=(l,p,x='')=>' '+padE(l,16)+padS(fmt(p[0]),9)+padS(fmt(p[1]),10)+x;
+   return{n:32,fps:9,hold:0,intro:12,r:i=>{const w=lane('~~^~~~_~',30,i).split(''),p=10+Math.round(6*Math.sin(i/32*2*Math.PI));w.splice(p,3,'\\','o','/');
+    const L=['  '+w.join('')+'  Ina, "working"',' '+padE(type==='debt'?`LOAN ${fmt(c.o)}@11%`:`YOU OWN ${Math.round(c.o/100)}%`,16)+padS('INA GETS',9)+padS('YOU GET',10),row('works hard',c.w),row('goes surfing',c.s)];
+    if(type==='debt')L.push(row('gamble wins',c.gw),row('gamble loses',c.gl,'  ← you lose '+fmt(c.o)));
+    L.push(row('surfing costs',[c.w[0]-c.s[0],c.w[1]-c.s[1]],type==='debt'?'':'  ← !'));return L.join('\n')}}},
+ covenant:()=>({n:36,fps:10,hold:1800,r:i=>{const x=i<15?12+i:i<20?26:Math.max(1,26-(i-20)*2),t=rep(' ',34).split('');[...'(o)$'].forEach((c,k)=>t[x+k]=c);t[31]='║';
+   return[padE(' [EQUIPMENT]',23)+'covenant ▼     [LOTTERY]',' '+t.join('').trimEnd(),' '+(i<15?'borrower: "lottery tickets would pay better..."':i<20?'BONK. The loan contract says no.':'...back to buying equipment.')].join('\n')}}),
+ screen:()=>{const v=['OK','BAD','OK','OK','BAD','OK'];return{n:12,fps:5,hold:2500,r:i=>{const k=Math.floor(i/2);return[' APPLICANTS → credit check BEFORE the loan',' '+v.map((x,j)=>j<k?(x==='OK'?'[ OK ]':'[BAD ]'):'[ ?? ]').join(' '),k<6?rep(' ',3+7*k)+'▲ scanning':' screening complete',` approved: ${v.slice(0,k).filter(x=>x==='OK').length} · rejected: ${v.slice(0,k).filter(x=>x!=='OK').length}`].join('\n')}}},
+ stamp:()=>({n:22,fps:5,hold:2400,r:i=>{const s=i>=8,k=s?Math.min(6,Math.floor((i-8)/2)+1):0;return[' A NEW BOND from a firm nobody knows',' ┌──────────────────┐'+(s?'  ╔══════════════╗':''),' │  UnknownCo  7%   │'+(s?'  ║ UNDERWRITTEN ║':''),' └──────────────────┘'+(s?'  ╚══ BIG BANK ══╝':''),' investors: '+(s?rep('(o) ',k):(i%2?'. . . ?':'. . .')),s?' a trusted brand certifies quality → buyers arrive':' no reputation, no buyers'].join('\n')}}),
+ monitor:()=>({n:10,fps:4,hold:3000,r:i=>{const k=Math.min(8,i),lot=[1,1,1,1,0,1,1,1];let c=0;const cnt=lot.map((x,j)=>j<k?(x?padS(++c,3)+'  ':'  !  '):'     ').join(' ');
+   return[" THE DEALER'S LOT · your loan paid for 8 cars",' '+lot.map(x=>x?'[car]':'[   ]').join(' '),' '+cnt,k<8?rep(' ',1+6*k)+' ▲ <o> counting AFTER the loan':' count finished',i>=9?' found 7 of 8. One car\'s worth of money is missing.\n covenant enforced: explain, or repay.':''].join('\n')}}),
+ intangible:()=>{const I=[[1977,8.4],[1978,8.2],[1982,10.4],[1984,9.9],[1992,10.9],[1993,10.5],[1996,11.2],[2001,14.4],[2004,13.9],[2008,15.5],[2010,14.7],[2014,15.8],[2017,15.2]],T=[[1977,13],[1979,14.7],[1982,14.1],[1983,13],[1985,13.8],[1987,12.7],[1989,12.5],[1992,10.7],[1997,12.4],[2000,13.1],[2003,10.2],[2007,11.4],[2009,9.2],[2012,10.3],[2014,10.8],[2017,10.6]];
+   return{n:40,fps:12,hold:3500,r:i=>{const L=[' % of private value added (approx., from Fig. 11.3)'];for(let v=16;v>=8;v--){let s='';for(let x=0;x<=i;x++){const a=Math.round(pts(I,1977+x))===v,b=Math.round(pts(T,1977+x))===v;s+=a&&b?'*':a?'I':b?'T':' '}L.push(padS(v,3)+'|'+s)}
+    L.push('    1977      1987      1997      2007      2017',' I = intangible (software, R&D)  T = tangible');return L.join('\n')}}},
+ debtbars:()=>({n:12,fps:10,hold:3500,r:i=>[' DEBT as % of book equity',' software firms  '+rep('█',2.5*i/12)+(i===12?' 10%':''),' restaurants     '+rep('█',24*i/12)+(i===12?' 95%':''),' nothing to seize → little lending'].join('\n')}),
+ internal:()=>({n:104,fps:10,hold:0,intro:20,r:i=>[' WHERE INVESTMENT MONEY COMES FROM (sketch, not data)',' own profits   '+lane('$═',22,-i)+'▶ ┐',' bank loans    '+lane('$───────',22,-i)+'▶ ├▶ [NEW PLANT]',' stocks/bonds  '+lane('$────────────',22,-i)+'▶ ┘'].join('\n')}),
+ fireworks:()=>{const W=50,H=7;let B;const gen=()=>{B=Array.from({length:5},(_,k)=>({x:6+Math.floor(Math.random()*38),y:1+Math.floor(Math.random()*5),t:k*4}))};gen();
+   return{n:26,fps:10,hold:0,intro:0,reset:gen,r:i=>{const g=Array.from({length:H},()=>rep(' ',W).split(''));B.forEach(b=>{const a=i-b.t;if(a<0||a>7)return;[[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1]].forEach(([dx,dy])=>{const x=b.x+dx*a*2,y=b.y+Math.round(dy*a*.6);if(g[y]&&x>=0&&x<W)g[y][x]=a<3?'*':a<6?'+':'.'});if(a===0)g[b.y][b.x]='o'});return g.map(r=>r.join('')).join('\n')}}},
+ rewind:()=>({n:12,fps:14,once:1,r:i=>` ◀◀ REWINDING TAPE [${bar(12-i,12,20)}]`}),
+ decrypt:mask=>({n:9,fps:14,hold:2200,r:i=>' ENCRYPTED TERM:  '+[...mask].map((ch,j)=>ch===' '||ch==='-'?ch:(j*7%9<i?ch:pick([...'▓▒░%&@?!']))).join('')}),
+ battle:(b,y,hit)=>({n:16,fps:4,hold:0,intro:0,r:i=>{let L=hit&&i<5?LEMON_HIT:LEMON;if(L===LEMON&&i%8===6)L=L.replace('(o)  (o)','(-)  (-)');return L+`\n THE LEMON  [${bar(b,100,20)}] ${padS(b,3)}\n YOU        [${bar(y,100,20)}] ${padS(y,3)}`}}),
+ trophy:()=>({n:8,fps:3,hold:0,intro:0,r:i=>TROPHY.split('\n').map((l,k)=>l+(k===(i*3)%10?'   *':k===(i*5+2)%10?'  +':'')).join('\n')})
+};
+const LEMON=String.raw`        _..--~~--.._
+     .-'   _    _   '-.
+    /     (o)  (o)     \
+   |          >         |
+    \      \______/    /
+     '-._          _.-'
+         '--....--'`;
+const LEMON_HIT=String.raw`        _..--~~--.._
+     .-'   _    _   '-.    *squirt*
+    /     (x)  (x)     \
+   |          >         |
+    \      /~~~~~~\    /
+     '-._          _.-'
+         '--....--'`;
+const TROPHY=String.raw`      ___________
+     '._==_==_=_.'
+     .-\:      /-.
+    | (|:.     |) |
+     '-|:.     |-'
+       \::.    /
+        '::. .'
+          ) (
+        _.' '._
+       '-------'`;
+const GALLERY=[['flow',[],'Indirect finance: savers → bank → borrowers'],['direct',[],'Direct finance: money one way, securities the other'],['crisis',[],'When banks fail, the economy follows'],['scatter',[],'Finance and income rise together'],['ratio',[],'Loans versus securities, by country'],['ebay',[],"Why Mort can't borrow from strangers"],['five',[],'The five jobs'],['pool',[],'Pooling savings'],['goldsmith',[],'How banking began'],['scale',[],'Economies of scale'],['liquidity',[],'Liquidity: a modest cushion is enough'],['diversify',[],'Diversification removes the disasters'],['gap',[],'Asymmetric information'],['timeline',[],'Before the deal, after the deal'],['lemons',[],'The market for lemons'],['bonds',[],'The pooled interest rate'],['card',[],'Your first credit card'],['freerider',[],'The free rider'],['collateral',[],'Collateral'],['downpay',[],'A down payment works like net worth'],['networth',[-30],'Deflation eats net worth'],['potato',[],'The hot potato, 2007-2009'],['ponzi',[],'Ponzi scheme'],['ina',['equity',1000],'Ina, financed with equity'],['ina',['debt',1000],'Ina, financed with debt'],['covenant',[],'Restrictive covenants'],['screen',[],'Screening'],['stamp',[],'Underwriters certify'],['monitor',[],'Monitoring'],['intangible',[],'Tangible versus intangible investment'],['debtbars',[],'Intangibles make poor collateral'],['internal',[],'Most finance is internal']];
+
+/* ================= course content ================= */
+const mc=(q,o,why)=>({t:'mc',q,o,why}),tf=(q,a,why)=>({t:'tf',q,a,why}),fill=(q,a,why)=>({t:'fill',q,a,why}),nm=(q,a,why,u)=>({t:'num',q,a,why,u});
+const MODULES=[
+{id:'big-picture',title:'THE BIG PICTURE',secs:[
+ {h:'What I am',beats:[["A *financial intermediary* stands in the middle. On one side: savers with spare money. On the other: borrowers who can put money to work.","Banks, insurers, pension funds, brokers, mutual funds: all intermediaries."],{fig:'flow'},["That is *indirect finance*. I owe the savers. The borrowers owe me. Saver and borrower never have to meet."],{fig:'direct'},["And that is *direct finance*: the borrower sells a stock or bond straight to the saver in a financial market. Money one way, securities the other."]],
+  q:[mc("A company sells newly issued bonds straight to investors in the bond market. This is:",["direct finance","indirect finance","internal finance","deposit finance"],"No institution's balance sheet sits in the middle, so it is direct."),tf("True or false: in indirect finance, a third party stands between the saver and the borrower.",true,"That third party is the intermediary.")],line:"indirect finance runs through an intermediary"},
+ {h:'Why anyone should care',beats:[["The financial system is plumbing. When it works, nobody notices. When it breaks, you get an expensive mess."],["Great Depression: banks closed, then unemployment passed *25 percent* and economic activity fell by nearly *a third*. Asia in 1997 and the crisis of 2007-2009 told the same story."],{fig:'crisis'},["Across countries, financial development and income per person move together. The correlation is about *0.6*. Rich countries have deep financial systems."],{fig:'scatter'}],
+  q:[mc("The correlation between financial development and real GDP per person is roughly:",["0.6","0.1","-0.6","1.0"],"Positive and strong, but not perfect."),tf("True or false: in the Great Depression, bank closings were followed by unemployment above 25%.",true,"And output fell by nearly a third.")],line:"when finance fails the economy fails with it"},
+ {h:'Banks versus markets',beats:[["How big are bank loans next to stock and bond markets? To compare countries, measure everything as a percent of GDP.","*Loans-to-securities ratio = C / (A + B)*","A = stock market value.  B = debt securities.  C = credit from banks."],{fig:'ratio'},["France: 86.7 / (63.3 + 45.2) = *0.80*. Below 1, so markets are a bit bigger than loans there. China's 1.90 means loans dominate.","Trap: these numbers can add up to far more than 100% of GDP. They are not pieces of GDP. A firm is often worth several years of its sales."]],
+  q:[nm("Stocks are 80% of GDP, debt securities 40%, bank credit 90%. What is the loans-to-securities ratio? (two decimals)",.75,"90 / (80 + 40) = 0.75"),nm("Stocks are 50% of GDP, debt securities 50%, bank credit 150%. Loans-to-securities ratio?",1.5,"150 / (50 + 50) = 1.50")],line:"bank credit divided by stocks plus bonds"},
+ {h:'The eBay puzzle',beats:[["You can buy almost anything on eBay. But nobody auctions off a mortgage there. Why not?"],["Problem one: *transactions costs*. Mort needs $100,000. Finding 100 strangers with $1,000 each, writing the contracts, collecting the payments... a nightmare.","Problem two: *information costs*. Can Mort repay? Will he even buy a house? Strangers can't cheaply find out."],{fig:'ebay'},["Institutions like me exist to cut those two costs. Remember them. The whole chapter hangs on them."]],
+  q:[mc("Finding out whether a borrower is trustworthy is a(n):",["information cost","transactions cost","liquidity cost","sunk cost"],"Writing contracts is a transactions cost. Judging trustworthiness is an information cost."),fill("The cost of writing a loan contract is a ___ cost.",["transactions","transaction"],"Transactions costs are the costs of making the deal happen.")],line:"intermediaries cut transactions costs and information costs"}]},
+{id:'five-jobs',title:'THE FIVE JOBS',secs:[
+ {h:'The list',beats:[["I do five jobs.","  1. *Pooling* savings","  2. *Safekeeping*, payments and accounting","  3. Providing *liquidity*","  4. *Diversifying* risk","  5. Collecting and processing *information*"],{fig:'five'},["Jobs 1 to 4 cut transactions costs. Job 5 stands alone: it cuts information costs.","Memory hook: *P*lease *S*ave *L*ots, *D*iversify *I*ntelligently."]],
+  q:[mc("Which job is NOT mainly about cutting transactions costs?",["Collecting and processing information","Providing liquidity","Pooling savings","Diversifying risk"],"Information is in a category of its own."),fill("Please Save Lots, Diversify Intelligently. The L stands for providing ___.",["liquidity"],"Pooling, Safekeeping, Liquidity, Diversification, Information.")],line:"pooling safekeeping liquidity diversification information"},
+ {h:'Job 1: pooling',beats:[["Pooling: I take many small deposits and turn them into one big loan.","*Savers needed = loan size / deposit size*"],{fig:'pool'},["To pull that off I need lots of savers, so I must look safe. Once that meant thick vault doors. Today it means reputation and deposit insurance."]],
+  q:[nm("A borrower needs $250,000. Each saver deposits $500. How many savers must be pooled?",500,"250,000 / 500 = 500 savers"),nm("A $100,000 loan is funded by $2,000 deposits. How many savers?",50,"100,000 / 2,000 = 50 savers")],line:"many small deposits become one large loan"},
+ {h:'Job 2 and the scale trick',beats:[["Goldsmiths were the first bankers. People stored gold with them for a receipt. Then people traded the receipts. Then the goldsmith lent out the idle gold. A bank was born.","Today I keep your money safe, plug you into the *payments system*, and keep your accounts."],{fig:'goldsmith'},["My trick is *economies of scale*: average cost falls as quantity rises.","*Average cost = total cost / quantity*","Say a lawyer charges $5,000 once for a great loan contract, then $2 each time I use it. (Illustrative numbers.)"],{fig:'scale'}],
+  q:[mc("One contract, reused for thousands of customers, so the cost per customer keeps falling. This is:",["economies of scale","comparative advantage","diversification","adverse selection"],"Average cost falls as quantity rises."),tf("True or false: with economies of scale, average cost RISES as the quantity produced rises.",false,"It falls.")],line:"average cost falls as quantity rises"}]},
+{id:'liquidity-diversification',title:'LIQUIDITY AND DIVERSIFICATION',secs:[
+ {h:'Job 3: liquidity',beats:[["*Liquidity* is how quickly and cheaply an asset turns into a means of payment. An ATM turns your balance into cash on demand."],["How do I promise instant cash when my money is tied up in long loans? Same way an insurer survives: not every driver crashes on the same day, and *not every depositor withdraws on the same day*.","So I keep a slice in short-term liquid assets and lend the rest long-term at higher rates. You get liquidity and a better return."],{fig:'liquidity'},["I also sell liquidity as a *line of credit*: a pre-approved loan you draw on when needed. Unlike a deposit, you can take out more than you put in."]],
+  q:[mc("A bank can offer instant withdrawals while making long-term loans because:",["not all depositors withdraw at the same time","loans can be called in overnight","deposit insurance pays the withdrawals","it never lends out deposits"],"So a modest liquid cushion is enough."),tf("True or false: with a line of credit, withdrawals can exceed your deposit balance.",true,"It is a pre-approved loan.")],line:"not every depositor withdraws on the same day"},
+ {h:'Job 4: diversification',beats:[["Don't put all your eggs in one basket. Watch six simulated years. Same money, lent two ways. (o = repaid, # = default)"],{fig:'diversify'},["The average loss is about the same either way. What changes is the *disaster*. One loan can wipe you out. Fifty rarely move much.","Textbook version: 1,000,000 depositors x $1,000 = $1 billion, lent as 10,000 loans. Each deposit has just *10 cents* in each loan."],["Mutual funds do it for stocks. One share of each S&P 500 firm at $40 to $60 would cost over *$20,000*. A fund sells you a sliver of all 500."]],
+  q:[nm("A bank spreads each $1,000 deposit evenly across 10,000 loans. How many dollars sit in each loan?",.1,"1,000 / 10,000 = $0.10. Ten cents."),mc("Spreading money across many borrowers mainly:",["cuts the chance of a disastrous loss","raises the average interest rate earned","guarantees no borrower defaults","removes the need to screen borrowers"],"The average loss stays about the same. The disasters go away.")],line:"spread the money and the disasters disappear"}]},
+{id:'asymmetric-information',title:'ASYMMETRIC INFORMATION',secs:[
+ {h:'The information gap',beats:[["Here is my real problem. The borrower always knows more than I do: about their business, their plans, their honesty.","That gap is *asymmetric information*. It makes financial markets some of the hardest markets to run."],{fig:'gap'},["eBay had the same problem with strangers selling to strangers. Its two fixes: a *feedback forum*, so sellers build a reputation, and *buyers' insurance*, in case the seller takes the money and runs.","Hold that thought. Banks do the same two things under other names."]],
+  q:[fill("When one side of a deal knows more than the other, there is ___ information.",["asymmetric"],"Asymmetric means unequal."),mc("Asymmetric information in lending means:",["borrowers know more about themselves than lenders do","lenders know more than borrowers","both sides know everything","nobody knows the interest rate"],"The borrower holds the hidden knowledge.")],line:"the borrower knows more than the lender"},
+ {h:'Before and after',beats:[["That gap causes two different problems. The trick is *when* each one strikes."],{fig:'timeline'},["*Adverse selection*: BEFORE the deal. Hidden *attributes*. I can't tell good borrowers from bad, and the worst ones are the most eager to borrow.","*Moral hazard*: AFTER the deal. Hidden *actions*. I can't see what you do with my money."],["Hook: *A*dverse selection comes first, like A in the alphabet, and is about *A*ttributes. *M*oral hazard comes later and is about *M*isbehaviour.","On eBay: 'Is this item as described?' is adverse selection. 'Will the seller ship it?' is moral hazard."]],
+  q:[mc("Adverse selection arises ___ the deal and concerns hidden ___.",["before / attributes","before / actions","after / attributes","after / actions"],"Before, attributes. Moral hazard is after, actions."),mc("A firm takes a loan for equipment, then quietly bets it on the stock market. This is:",["moral hazard","adverse selection","the free-rider problem","diversification"],"A hidden action after the deal.")],line:"adverse selection before moral hazard after"}]},
+{id:'adverse-selection',title:'ADVERSE SELECTION',secs:[
+ {h:'The market for lemons',beats:[["George Akerlof, 1970 (Nobel Prize, 2001). Two used cars. A *peach* worth $20,000 and a *lemon* worth $10,000. Owners know which is which. Buyers don't."],{fig:'lemons'},["*Offer = share of peaches x peach value + share of lemons x lemon value*","0.5 x $20,000 + 0.5 x $10,000 = *$15,000*. Too low for the peach owner. The good car leaves. Only the lemon is left.","That is adverse selection: when buyers can't see quality they pay the average, and the average drives out the good."],["The cure is information: history reports, mechanics, dealer reputations, warranties. Once buyers can see quality, both cars sell at their true value."]],
+  q:[nm("Half the cars are peaches worth $20,000 and half are lemons worth $10,000. Buyers can't tell. What do they offer, in dollars?",15000,"0.5 x 20,000 + 0.5 x 10,000 = 15,000",'$'),nm("80% of cars are peaches worth $20,000; 20% are lemons worth $10,000. Buyers can't tell. What do they offer?",18000,"0.8 x 20,000 + 0.2 x 10,000 = 18,000. If peach owners accept that, the market survives.",'$')],line:"buyers pay the average so the good cars leave"},
+ {h:'Lemons in stocks and bonds',beats:[["Same story in finance. Two firms, one good, one bad. Investors can't tell, so they pay an average price for shares. The good firm's stock is undervalued, so it doesn't issue any. Only the bad firm is left."],["Bonds too. Risk needs compensation, so risky borrowers should pay more. If I can't tell who is who, I charge everyone the average.","*Pooled rate = risk-free rate + average risk premium*"],{fig:'bonds'},["Safe firms are overcharged, so they walk. I am left holding the risky ones. Nobody wants that, so the market can vanish."]],
+  q:[nm("The risk-free rate is 5%. Safe firms deserve a 2% premium, risky firms 6%. Equal numbers, and you can't tell them apart. What rate (%) do you charge?",9,"5 + (2 + 6) / 2 = 9%",'%'),mc("When everyone is charged that pooled rate, who leaves the market?",["the safe firms","the risky firms","both types","neither type"],"Safe firms are overcharged. Risky firms get a bargain and stay.")],line:"good borrowers leave when everyone pays the average rate"},
+ {h:'Your first credit card',beats:[["Adverse selection, real life edition: your first credit card. No credit history, so the issuer assumes the worst and lumps you in with people who can't get credit anywhere else. Sky-high rate."],{fig:'card'},["Why society cares: when good firms can't get fair financing, good investments never happen, and the economy grows more slowly."]],
+  q:[mc("A first credit card carries a very high rate mainly because of:",["adverse selection: no history, so you're pooled with bad risks","moral hazard: students always overspend","the free-rider problem","economies of scale"],"The issuer can't tell you from a bad risk, and the loan is unsecured."),tf("True or false: adverse selection can cause a market to shrink or even disappear.",true,"Good sellers and borrowers leave, and nobody wants what remains.")],line:"no credit history means pooled with the bad risks"}]},
+{id:'fixing-adverse-selection',title:'FIXING ADVERSE SELECTION',secs:[
+ {h:'Fix 1 and 2: more information',beats:[["Two ways to fix adverse selection: create more information, or make sure the lender gets paid anyway.","First, information. *Government-required disclosure*: public companies must publish standard financial statements. Helpful, but Enron and WorldCom showed that statements can be faked."],["*Private information*: firms like Moody's and Value Line research companies and sell reports.","The catch is the *free rider*: someone who gets the benefit without paying. Read the report at a library, see it in the news, copy a subscriber. So researchers can't earn enough, and too little gets produced."],{fig:'freerider'}],
+  q:[mc("Private research services can't fully solve adverse selection because of:",["the free-rider problem","restrictive covenants","deflation","limited liability"],"People use the information without paying for it."),fill("Someone who gets the benefit of a good without paying for it is a ___ rider.",["free"],"Free riders undermine private information.")],line:"free riders use information without paying for it"},
+ {h:'Fix 3 and 4: collateral and net worth',beats:[["Second approach: guarantee the lender gets paid.","*Collateral* is something of value pledged in case of default. A house backs a mortgage. A car backs a car loan. If the loan is covered, I care less who you are.","No collateral? That is an *unsecured loan*, like a credit card. Expect a very high rate."],{fig:'collateral'},["*Net worth = assets - liabilities*. It is the owner's own stake. If the project fails, I can be repaid out of it. A down payment on a house does the same job.","This is why new businesses struggle to borrow: no net worth yet. Owners end up pledging their homes."],{fig:'downpay'}],
+  q:[fill("Something of value pledged to the lender in case of default is ___.",["collateral"],"Houses for mortgages, cars for car loans."),nm("A firm has assets of $500 million and liabilities of $350 million. Net worth, in $ millions?",150,"500 - 350 = 150")],line:"net worth equals assets minus liabilities"},
+ {h:'Deflation',beats:[["*Deflation* means prices fall on average. It is poison for borrowers. Watch what it does to a firm with $100 of assets and $60 of debt."],{fig:'networth',a:[-30]},["The debt is fixed in dollars. The assets shrink with prices. So net worth takes the whole hit.","Less net worth means the firm looks less trustworthy. Lenders pull back and investment falls. The same thing happens at the start of a recession."]],
+  q:[nm("Assets $100, debt $60. Deflation cuts asset values by 20%; the debt is unchanged. New net worth, in dollars?",20,"Assets fall to $80. 80 - 60 = 20. Net worth halved from $40.",'$'),mc("Deflation hurts borrowers because:",["debts stay fixed in dollars while asset values fall","interest rates always rise","collateral becomes more valuable","banks stop taking deposits"],"So net worth shrinks.")],line:"deflation shrinks assets but not debts"},
+ {h:'The hot potato',beats:[["Crisis of 2007-2009. Screening failed at every step of mortgage securitization. Watch the potato."],{fig:'potato'},["Everyone assumed the collateral, houses, would keep rising in value. When prices fell, the houses no longer covered the loans.","Lesson: screening and monitoring matter, free riding destroys them, and collateral only protects you if it holds its value."]],
+  q:[mc("Investors who trusted the ratings instead of checking the loans themselves were:",["free riding","monitoring","diversifying","screening"],"They relied on someone else's (weak) screening."),mc("Collateral failed to protect investors in the crisis because:",["house prices fell below the loan amounts","houses can't legally be collateral","borrowers had too much net worth","rating agencies owned the houses"],"Collateral is only as good as its value.")],line:"collateral only helps if it holds its value"}]},
+{id:'moral-hazard',title:'MORAL HAZARD',secs:[
+ {h:'Moral hazard in equity',beats:[["*Moral hazard* began as an insurance term: a policy changes how the insured behaves. Insure a car generously, get reckless driving. Fraud is the extreme case.","In stocks it is the *principal-agent problem*. Owners are principals. Managers are agents. Managers run the firm for themselves: jets, art, big pay."],{fig:'ponzi'},["Meet cousin Ina. Her software idea costs $10,000. She has $1,000 (10%). You put in $9,000 (90%). Work hard: worth $100,000. Go surfing: worth $10,000. And you can't watch her."],{fig:'ina',a:['equity',1000]},["Surfing costs her $9,000. It costs you *$81,000*. She gets all the beach and a tenth of the bill."]],
+  q:[nm("Ina owns 10%, you own 90%. Slacking drops the value from $100,000 to $10,000. How many dollars does it cost YOU?",81000,"The loss is $90,000. Your 90% share of it is $81,000.",'$'),fill("In the principal-agent problem, owners are the principals and managers are the ___.",["agents","agent"],"Agents act on the principals' behalf, in theory.")],line:"managers enjoy the perks and owners pay the bill"},
+ {h:'Moral hazard in debt',beats:[["Try a loan instead. Lend Ina $9,000 at 11%.","*Repayment = loan x (1 + interest rate)* = $9,000 x 1.11 = *$9,990*, whatever happens."],{fig:'ina',a:['debt',1000]},["Now slacking costs HER. Debt fixes the surfing problem.","But look at the gamble rows (an illustrative $500,000 jackpot). If a wild bet pays off, she keeps everything above $9,990. If it fails, *limited liability* means I eat the loss. Heads she wins, tails I lose. Debt invites risk-taking."]],
+  q:[nm("You lend $9,000 for one year at 11%. How many dollars must be repaid?",9990,"9,000 x 1.11 = 9,990",'$'),mc("Debt does not eliminate moral hazard because the borrower:",["keeps the upside but has limited liability for losses","stops caring whether the project succeeds","becomes a part-owner of the bank","can skip interest payments"],"That tempts borrowers to take big risks with the lender's money.")],line:"borrowers keep the upside and lenders eat the downside"},
+ {h:'The fixes',beats:[["Fixes for equity: make managers *own a stake*, and make them *report to owners* who can fire them.","Stock options were tried in the 1990s. Some managers faked profits to pump the share price and cash in. Backfired."],["Fix for debt: *restrictive covenants*. Contract clauses that limit what you may do with my money: what you can buy, a minimum net worth, a minimum bank balance. Mortgages require fire insurance."],{fig:'covenant'}],
+  q:[mc("'Use this loan only for equipment and keep $50,000 in your account.' That clause is a:",["restrictive covenant","collateral pledge","disclosure rule","line of credit"],"Covenants restrict the borrower's behaviour after the loan."),tf("True or false: stock options turned out to be a foolproof cure for the principal-agent problem.",false,"Some managers misrepresented profits to cash in.")],line:"restrictive covenants limit what borrowers can do"}]},
+{id:'intermediaries-fix-it',title:'HOW INTERMEDIARIES FIX IT',secs:[
+ {h:'Screening',beats:[["Now my part. Against adverse selection I *screen and certify* before the deal."],{fig:'screen'},["*Credit scores*: a company gathers your history and charges a fee every time someone looks. Pay-per-view kills the free rider.","*Your account*: I see your deposits and withdrawals. That private knowledge is why small firms depend on banks.","*Underwriters*: big names like Goldman Sachs put their brand behind a new stock or bond, the way a famous label vouches for what's in the can."],{fig:'stamp'}],
+  q:[mc("Checking an applicant's credit score BEFORE lending is ___ and fights ___.",["screening / adverse selection","monitoring / moral hazard","screening / moral hazard","monitoring / adverse selection"],"Screen before. Monitor after."),mc("Credit-score companies beat the free-rider problem by:",["charging a fee each time a score is viewed","publishing scores for everyone","being paid by the borrower","relying on government grants"],"No pay, no look.")],line:"screen before the deal to fight adverse selection"},
+ {h:'Monitoring',beats:[["Against moral hazard I *monitor* after the deal. Example: I lend a car dealer money to stock the lot. Then I send someone to count the cars."],{fig:'monitor'},["Others monitor too. Pension funds research firms and may put a director on the board. *Venture capital* firms fund risky start-ups for a stake and watch the managers closely.","And the *threat of takeover*: run the firm badly and someone buys it and replaces you."]],
+  q:[mc("A bank counts the cars on a dealer's lot after making the loan. This is:",["monitoring, against moral hazard","screening, against adverse selection","certifying, against free riders","pooling, against transactions costs"],"The loan already exists, so it is monitoring."),mc("Venture capital firms deal with moral hazard by:",["taking a stake and watching managers closely","lending only against houses","relying on SEC disclosure","diversifying so widely they needn't watch"],"Ownership plus close monitoring.")],line:"monitor after the deal to fight moral hazard"},
+ {h:'The humbling ending',beats:[["A modern wrinkle: *intangible capital*. Software, data, research, training. You can't resell it easily, so it is poor collateral. Software firms' debt is about 10% of book equity. Restaurants: nearly 95%."],{fig:'intangible'},{fig:'debtbars'},["And even with all my screening and monitoring, the vast majority of business investment is paid for from *internal sources*: the firm's own funds.","Information problems are too big for even me to solve completely. End of chapter."],{fig:'internal'}],
+  q:[mc("Software firms borrow far less than restaurants because their assets:",["are intangible and make poor collateral","are too profitable to need loans","can't legally back a loan","are monitored by the SEC"],"Lenders can't seize and resell code the way they can a building."),fill("The vast majority of business investment is financed from ___ sources.",["internal"],"The firm's own funds.")],line:"most investment is financed from internal sources"}]}
+];
+const ALLQ=MODULES.flatMap(m=>m.secs.flatMap(s=>s.q));
+
+const GLOSS=[
+['financial intermediary','An institution that stands between savers and borrowers.','A bank, an insurer, a pension fund, a mutual fund.',['indirect finance','pooling']],
+['direct finance','Borrowers sell securities straight to lenders in financial markets.','A firm sells a bond to an investor.',['indirect finance','underwriter']],
+['indirect finance','A third party issues claims to savers and holds claims on borrowers.','You deposit at a bank; the bank lends to a homebuyer.',['direct finance']],
+['transactions costs','The costs of making a deal happen.','Paying a lawyer to write a loan contract.',['information costs','economies of scale']],
+['information costs','The costs of finding out whether the other side can be trusted.','Checking whether a borrower is creditworthy.',['asymmetric information']],
+['economies of scale','Average cost falls as the quantity produced rises.','One good contract reused for thousands of loans.',['transactions costs']],
+['liquidity','How quickly and cheaply an asset turns into a means of payment.','An ATM turning your balance into cash.',['line of credit']],
+['line of credit','A pre-approved loan you can draw on whenever funds are needed.','A home equity line. Withdrawals can exceed your deposits.',['liquidity']],
+['diversification','Spreading money across many borrowers or stocks to cut risk.','A $1,000 deposit spread over 10,000 loans: 10 cents each.',['pooling']],
+['asymmetric information','One side of a deal knows more than the other.','A borrower knows their own honesty; the lender does not.',['adverse selection','moral hazard']],
+['adverse selection','The before-the-deal problem: the worst risks are the most eager, and you cannot tell them apart. Hidden attributes.','Lemons in the used-car market. Your first credit card.',['screening','collateral','net worth']],
+['moral hazard','The after-the-deal problem: the other side may not behave as promised, and you cannot watch. Hidden actions.','A borrower gambling the loan. A manager buying a jet.',['monitoring','restrictive covenants']],
+['free rider','Someone who gets the benefit of something without paying for it.','Reading stock research at the library.',['screening']],
+['collateral','Something of value a borrower pledges in case of default.','The house behind a mortgage.',['unsecured loan','net worth']],
+['unsecured loan','A loan with nothing pledged behind it. Very high interest.','Credit card debt.',['collateral']],
+['net worth','Assets minus liabilities: the owner\'s stake.','Assets $500m, liabilities $350m: $150m.',['collateral','deflation']],
+['deflation','Prices falling on average. Assets shrink, debts do not.','Japan since the 1990s; the 1930s.',['net worth']],
+['principal-agent problem','Owners and the managers who run the firm for them want different things.','Executives with jets, art and huge pay.',['moral hazard']],
+['restrictive covenants','Contract clauses limiting what a borrower may do.','A mortgage requiring fire insurance.',['moral hazard','monitoring']],
+['limited liability','A borrower\'s losses are capped, so the lender bears the rest.','Gamble wins: borrower keeps it. Gamble loses: lender pays.',['moral hazard']],
+['screening','Checking borrowers before lending.','Loan applications and credit scores.',['adverse selection','underwriter']],
+['monitoring','Watching borrowers after lending.','Counting the cars on a dealer\'s lot.',['moral hazard','venture capital']],
+['underwriter','A big institution that screens and certifies firms issuing stocks and bonds.','Goldman Sachs, JPMorgan Chase, Morgan Stanley.',['screening']],
+['venture capital','Firms that fund risky start-ups for an ownership stake and watch the managers.','Kleiner Perkins, Draper Fisher.',['monitoring']],
+['intangible capital','Investment you cannot touch or easily resell, so it makes poor collateral.','Software, data, R&D, training.',['collateral']]
+].map(g=>({n:g[0],d:g[1],ex:g[2],see:g[3]}));
+
+const CHEAT=["*THE TWO PROBLEMS*","  ADVERSE SELECTION   before the deal · hidden attributes","    fixes: disclosure, private info, collateral, net worth","    intermediaries: SCREEN and certify","  MORAL HAZARD        after the deal · hidden actions","    fixes: owner stake, reporting, restrictive covenants","    intermediaries: MONITOR","","*THE FIVE JOBS*  (1-4 cut transactions costs, 5 cuts information costs)","  pooling · safekeeping/payments · liquidity · diversification · information","","*FORMULAS*","  loans-to-securities = C / (A + B)","  average cost        = total cost / quantity","  hidden-quality offer= share good x good value + share bad x bad value","  pooled rate         = risk-free rate + average risk premium","  net worth           = assets - liabilities","  repayment           = loan x (1 + rate)","","*NUMBERS*","  correlation finance/GDP 0.6 · lemons offer $15,000 · Ina: $9,000 vs your $81,000","  Ina's loan repays $9,990 · 10 cents per loan · S&P 500 yourself: over $20,000","","*TRAPS*","  counting cars = monitoring, not screening","  fraud = moral hazard, not adverse selection","  debt reduces moral hazard but invites risk-taking","  deflation cuts net worth; most finance is internal"];
+
+const BANK=[
+{t:'THE STRANGER',s:["A young man with no credit history wants $10,000. No collateral. He says he is very reliable."],o:[["Lend at the same low rate as your best customers",-30,"He was not reliable. Neither were the forty others who heard about your offer. Easy money with no questions attracts exactly the wrong crowd."],["No history, so ask for collateral or a co-signer",15,"He pledges his car. If he is honest, he pays. If not, you own a car.",1],["Refuse everyone without a history, forever",0,"Safe. But you turned away every good young customer too. No loss, no profit."]],l:"Adverse selection. Fix: screening and collateral."},
+{t:'ONE RATE FOR ALL',s:["Your manager wants to charge every business the same 9%, safe or risky. 'Simpler,' he says."],o:[["Fine. 9% for everyone",-25,"Safe firms deserve 7% and go elsewhere. Risky firms, who deserve 11%, queue around the block."],["Raise everyone to 13%, to be safe",-30,"Now only the truly desperate apply. Higher rate, worse crowd."],["Screen each firm and price by its risk",15,"Safe firms pay 7% and stay. Risky firms pay 11%. Everyone is priced fairly.",1]],l:"A pooled rate drives out good borrowers. Screen, then price."},
+{t:'THE CAR DEALER',s:["You lent a car dealer $200,000 to stock his lot. The cars are the collateral. The loan is made. Now what?"],o:[["Write it into the contract: we count the cars every month",15,"Twelve cars, twelve counted. He knows you are watching. He behaves.",1],["Trust him. He seems nice",-25,"He sold twelve cars and bought a boat. You find out when the lot is empty."],["Demand full repayment tomorrow",-5,"He can't. You lose a good customer and a year of interest."]],l:"Moral hazard. Fix: monitoring and restrictive covenants."},
+{t:'THE VAULT',s:["Depositors have given you $1,000,000. How much do you keep liquid for withdrawals?"],o:[["Nothing. Lend out every dollar",-35,"Tuesday: 12% of depositors want cash. You have none. Word spreads. That is a bank run."],["About 15 to 20 percent",15,"Withdrawals come and go. You always pay. The rest earns long-term rates.",1],["All of it. Lend nothing",-10,"Perfectly safe, perfectly useless. You earn nothing and still pay the staff."]],l:"Liquidity. Not everyone withdraws on the same day, so a cushion is enough."},
+{t:'ALL THE EGGS',s:["You have $100,000 to lend this year."],o:[["One $100,000 loan to a builder you like",-30,"One default and it is all gone. He defaulted."],["One hundred loans of $1,000",10,"Nine defaulted. Ninety-one paid with interest. A good year.",1],["Two loans of $50,000",-15,"One of the two defaulted. Half your money, gone."]],l:"Diversification. It doesn't raise the average. It removes the disasters."},
+{t:'TRIPLE-A',s:["A broker offers you mortgage securities rated AAA. 'Everyone is buying them.'"],o:[["Buy big. The rating is enough",-35,"The agency barely looked at the loans. House prices fell. You were a free rider, and the ride ended."],["Inspect the underlying loans yourself first",15,"You find borrowers with no income. You pass. Six months later the buyers are underwater.",1],["Buy only if the seller keeps a stake in them",10,"With their own money on the line, the seller suddenly screens very carefully."]],l:"Free riding on someone else's screening is not screening."},
+{t:'COUSIN INA',s:["Ina needs $9,000 for her software start-up. You cannot watch what she does all day."],o:[["A plain loan, no strings",-15,"She bought lottery tickets. Limited liability: her upside, your downside."],["A loan with covenants, and she puts in more of her own money",15,"Her money is at risk and the contract limits what she can do. She works.",1],["Buy 90% of the shares and hope",-20,"She went surfing. It cost her $9,000 and you $81,000."]],l:"Moral hazard. Fixes: borrower's own stake, covenants."},
+{t:'FALLING PRICES',s:["Deflation. Your borrowers' collateral is worth 20% less than last year. New loan applications are on your desk."],o:[["Lend as before against the same collateral",-25,"Collateral that used to cover the loan no longer does."],["Ask for bigger down payments and more collateral",15,"Fewer loans, but each one is covered.",1],["Stop lending completely",-10,"No loans, no income. And the town's economy sinks further."]],l:"Deflation shrinks net worth and collateral. Lenders must adjust."}
+];
+
+/* ================= question engine ================= */
+async function quiz(q,o={}){
+  await type(q.q,{cls:'q'});let chips=[],key,correct,opts,gone=[];
+  if(q.t==='mc'){opts=shuffle(q.o);for(let i=0;i<opts.length;i++)await type(`${'abcd'[i]}) ${opts[i]}`,{cls:'opt',turbo:true});key='abcd'[opts.indexOf(q.o[0])];correct=key+') '+q.o[0];chips=[...'abcd'].slice(0,opts.length)}
+  else if(q.t==='tf'){key=q.a?'true':'false';correct=q.a?'TRUE':'FALSE';chips=['true','false']}
+  else if(q.t==='fill'){key=q.a[0];correct=q.a[0]}
+  else{key=String(q.a);correct=q.u==='$'?fmt(q.a):q.a+(q.u==='%'?'%':'')}
+  for(;;){const v=await askQ({chips:chips.concat(o.noHint?[]:['hint']),ps:'<i class="a">answer</i>&gt;',timeout:o.timeout,ans:key});
+    if(v===null)return{ok:false,correct,timeout:true};const a=v.toLowerCase();
+    if(a==='hint'&&!o.noHint){if(q.t==='mc'){const w=[...'abcd'].slice(0,opts.length).filter(k=>k!==key&&!gone.includes(k));if(w.length>1){const g=pick(w);gone.push(g);await type(`hint: it is not ${g}.`,{cls:'dim'})}else await type('No more hints. Commit.',{cls:'dim'})}
+      else if(q.t==='fill')await type(`hint: ${key.length} letters, starts with "${key[0]}".`,{cls:'dim'});else if(q.t==='tf')await type('hint: it is one of the two.',{cls:'dim'});else await type('hint: write out the formula, then plug in.',{cls:'dim'});continue}
+    if(a==='help'||a==='?'){await type("Answer the question. Also: hint · quit · theme · sound · speed · difficulty · status",{cls:'dim'});continue}
+    if(!a)continue;
+    if(q.t==='mc'){const k='abcd'.includes(a[0])&&(a.length===1||a[1]===')')?a[0]:null;if(!k||'abcd'.indexOf(k)>=opts.length){await type('Type a letter: '+chips.join(', ')+'.',{cls:'dim'});continue}return{ok:k===key,correct}}
+    if(q.t==='tf'){if(!/^(t|f|true|false|y|n|yes|no)$/.test(a)){await type('Type true or false.',{cls:'dim'});continue}return{ok:(/^(t|y)/.test(a))===q.a,correct}}
+    if(q.t==='fill')return{ok:q.a.map(norm).includes(norm(a)),correct};
+    const n=num(a);if(isNaN(n)){await type('I need a number.',{cls:'dim'});continue}return{ok:Math.abs(n-q.a)<=Math.max(Math.abs(q.a)*.006,.006),correct}}
+}
+const PRAISE=['Correct.','Yes.','Right.','Exactly.','Good.','That is it.'];
+async function good(q){streak++;S.xp+=10;save();play('correct');await type(`[ OK ] ${pick(PRAISE)} ${q.why||''}`,{cls:'ok'});
+  if(streak%3===0&&integrity<100){integrity=Math.min(100,integrity+10);play('streak');await type(`       three in a row: patch applied, integrity +10 → ${integrity}%`,{cls:'ok',turbo:true})}updateStatus()}
+async function crashFx(){play('wrong');win.classList.add('shake');setTimeout(()=>win.classList.remove('shake'),480);skip=false;for(const l of TH[S.theme].crash)await type(l,{cls:'err',turbo:true})}
+function meltdown(title,body){return new Promise(res=>{play('meltdown');crashEl.textContent=`\n  *** ${title} ***\n\n${body}\n\n  Press any key to continue _`;crashEl.hidden=false;setMode('idle');setTimeout(()=>{setMode('crash');resolver=()=>{crashEl.hidden=true;setMode('idle');res()}},700)})}
+async function detention(line,times){await say([`Detention. Type this line${times>1?' '+times+' times':''}. Exactly.`]);
+  for(let k=0;k<times;k++)for(;;){await type('  '+line,{cls:'acc',turbo:true});const v=await askQ({ps:`<i class="a">line ${k+1}/${times}</i>&gt;`,ans:line});if(norm(v)===norm(line)){play('advance');break}play('deny');await type('Not the same. Again. Slowly.',{cls:'err'})}}
+
+/* ================= mode: learn ================= */
+async function playSection(sec,si,replay){turbo=replay;auto=replay;try{
+  await type(`§${si+1} ${sec.h}${replay?'  (replay ▶▶)':''}`,{cls:'hd'});
+  for(const b of sec.beats){if(Array.isArray(b)){await say(b);await wait()}else await fig(FIG[b.fig](...(b.a||[])),replay)}
+ }finally{turbo=false;auto=false}}
+async function runModule(mi){const M=MODULES[mi];
+  for(;;){integrity=100;streak=0;let dead=false;loc=`${mi+1}/8`;updateStatus();
+    await type(`MODULE ${mi+1} OF 8 · ${M.title}`,{cls:'hd'});
+    for(let si=0;si<M.secs.length&&!dead;si++){const sec=M.secs[si];let fails=0,replay=false,show=true;
+      for(;;){loc=`${mi+1}/8 §${si+1}/${M.secs.length}`;updateStatus();
+        if(show)await playSection(sec,si,replay);
+        await type('CHECKPOINT',{cls:'hd2'});
+        const q=sec.q[fails%sec.q.length],r=await quiz(q);
+        if(r.ok){await good(q);break}
+        fails++;streak=0;await crashFx();await say([`Wrong. The answer was *${r.correct}*.`,q.why]);
+        if(S.diff==='chill'){await say(["Chill mode: no penalty. Different question, same idea."]);show=false;continue}
+        if(S.diff==='hardcore'){dead=true;break}
+        integrity=Math.max(0,integrity-25);updateStatus();await type(`integrity -25% → ${integrity}%  [${bar(integrity,100,20)}]`,{cls:'err',turbo:true});
+        if(integrity<=0){dead=true;break}
+        await detention(sec.line,Math.min(fails,3));
+        await say(["Now we do the section again. Then a different question."]);play('rewind');await fig(FIG.rewind(),false);replay=true;show=true}}
+    if(!dead)break;
+    await meltdown('CORE MELTDOWN',`  A fatal exception 0x11 has occurred in MODULE ${mi+1}.\n\n  ${S.diff==='hardcore'?'Hardcore mode: one wrong answer is fatal.':'Integrity reached 0%.'}\n  Everything from this module has been dumped on the vault floor.\n\n  * The module will restart from section 1.\n  * Tip: type "hint" at a question, or "difficulty chill".`);
+    out.innerHTML='';await say([`Rebooted. Module ${mi+1}, from the top, ${S.name||'operator'}.`])}
+  const first=!S.done[mi];S.done[mi]=1;S.xp+=50;save();updateStatus();
+  const all=Object.keys(S.done).length===MODULES.length;play(all&&first?'chapter':'module');
+  await type(`MODULE ${mi+1} COMPLETE · +50 xp · integrity ${integrity}%`,{cls:'hd'});await fig(FIG.fireworks(),true);
+}
+/* ================= shell commands ================= */
+const SALIAS={themes:'theme',terminals:'theme',vol:'volume',sounds:'sound',mute:'sound',cls:'clear',diff:'difficulty',mode:'difficulty'};
+const SYS={
+ theme:async a=>{const k=Object.keys(TH),q=(a.join(' ')||'').trim();if(!q){await type('Opening the terminal gallery. ('+k.length+' terminals. Or type: theme <name>, theme next)',{cls:'dim',turbo:true});themePanel();return}
+   const n=q==='next'?k[(k.indexOf(S.theme)+1)%k.length]:q==='random'?pick(k):k.find(x=>x===q)||k.find(x=>TH[x].label.toLowerCase().includes(q));
+   if(!n){await type('No such terminal. Names: '+k.join(' · '),{cls:'dim',turbo:true});return}setTheme(n);play('select');await type(`terminal → ${TH[n].label}`,{cls:'dim',turbo:true})},
+ speed:async a=>{if(!SPEED[a[0]]){await type('speed: slow · normal · fast · instant',{cls:'dim'});return}S.speed=a[0];save();syncUI();await type('speed → '+a[0],{cls:'dim',turbo:true})},
+ sound:async a=>{if(a[0]==='on'||a[0]==='off'){S.sound=a[0]==='on';save();syncUI();play('select');await type('sound → '+a[0],{cls:'dim',turbo:true});return}
+   if(a[0]==='test'){SROWS.forEach((r,i)=>setTimeout(r[2],i*1100));await type('Playing every sound...',{cls:'dim',turbo:true});return}
+   await type('Opening the sound menu. (Also: sound on · sound off · sound test · volume 0-100)',{cls:'dim',turbo:true});soundPanel()},
+ volume:async a=>{const v=num(a[0]);if(isNaN(v)){await type(`volume is ${S.vol}%. Set it with: volume 0-100`,{cls:'dim'});return}S.vol=Math.max(0,Math.min(100,Math.round(v)));S.sound=S.vol>0;save();syncUI();play('correct');await type(`volume → ${S.vol}%  [${bar(S.vol,100,10)}]`,{cls:'dim',turbo:true})},
+ difficulty:async a=>{if(!['chill','normal','hardcore'].includes(a[0])){await type('difficulty: chill (just retry) · normal (crash, detention, replay; 0% integrity restarts the module) · hardcore (one wrong answer restarts the module)',{cls:'dim'});return}S.diff=a[0];save();syncUI();await type('difficulty → '+a[0],{cls:'dim',turbo:true})},
+ clear:async()=>{out.innerHTML=''},
+ status:async()=>{const d=Object.keys(S.done).length;await type(`operator ${S.name||'?'} · xp ${S.xp} · modules ${d}/8 [${MODULES.map((m,i)=>S.done[i]?'x':'.').join('')}] · terms ${Object.keys(S.terms).length}/${GLOSS.length} · boss wins ${S.bossWins} · best bank $${S.bankBest}k · ${S.diff} · ${TH[S.theme].label}`,{cls:'info',turbo:true})}
+};
+const figCmd=(name,parse)=>async a=>{await fig(FIG[name](...parse(a)))};
+const BANKFIG=[['screen'],['bonds'],['monitor'],['liquidity'],['diversify'],['potato'],['ina','debt',1000],['networth',-20]];
+const CMD={
+ help:async()=>{skip=false;for(const l of ["*LEARN*","  learn [1-8]   guided course. I teach, I ask. Wrong answers have consequences.","  bank          you are the loan officer. Eight decisions. Don't go bust.","  boss          final exam. Fight THE LEMON, 30 seconds a question.","  crack         decrypt key terms from their clues.","*PICTURES*","  gallery       every animation in the chapter, one after another","  show <name>   play one animation (show with no name lists them)","*LAB*  (simulators: change the numbers and see)","  lemons [peach%] [owner-minimum]      e.g. lemons 80 17000","  rate [riskfree] [safe] [risky] [safe%]   e.g. rate 5 2 6 50","  deflate [percent]                    e.g. deflate -40","  ina [equity|debt] [her-stake]        e.g. ina debt 1000","  pool [loan] [deposit]                e.g. pool 250000 500","  diversify [loans] [default%]         e.g. diversify 50 10","  liquidity [reserve%]                 e.g. liquidity 8","  ratio · ponzi                        no numbers needed","*REFERENCE*","  man [term] · terms · ls · cat <file> · cheat","*SYSTEM*","  theme [name|next|random] · sound · volume [0-100] · speed [slow|normal|fast|instant]","  difficulty [chill|normal|hardcore] · status · clear · reboot · reset","*KEYS*  while I type: Enter, Space or click skips ahead.  quit leaves a mode."])await type(l,{turbo:true})},
+ menu:async()=>menu(),
+ learn:async a=>{let mi=parseInt(a[0])-1;
+   if(isNaN(mi)){for(let i=0;i<MODULES.length;i++)await type(`  ${i+1}  [${S.done[i]?'x':' '}] ${MODULES[i].title}`,{turbo:true});const v=await askQ({chips:MODULES.map((m,i)=>String(i+1)),ps:'<i class="a">module</i>&gt;',ans:'1'});mi=parseInt(v)-1}
+   if(!(mi>=0&&mi<MODULES.length)){await type('No such module.',{cls:'err'});return}
+   for(;mi<MODULES.length;mi++){ctx='learn';await runModule(mi);
+     if(mi===MODULES.length-1){await fig(FIG.trophy(),true);await say(["That was the whole chapter. Now prove it: type *boss*."]);break}
+     const v=await askQ({chips:['y','n'],ps:'<i class="a">next module? [y/n]</i>&gt;',ans:'y'});if(!/^y/i.test(v))break}loc=''},
+ bank:async()=>{ctx='bank';for(;;){let cap=100,bust=false;await type('FIRST TERMINAL BANK · you are the loan officer',{cls:'hd'});
+   await say(["Starting capital: $100k. Eight decisions. Each one is a concept from the chapter wearing a disguise.","Hit zero and the regulators change the locks."]);await wait();
+   for(let i=0;i<BANK.length;i++){const c=BANK[i];loc=`case ${i+1}/8 · capital $${cap}k`;updateStatus();await type(`CASE ${i+1}: ${c.t}`,{cls:'hd'});await say(c.s);
+     const o=shuffle(c.o);for(let k=0;k<o.length;k++)await type(`${'abc'[k]}) ${o[k][0]}`,{cls:'opt',turbo:true});let ch;
+     for(;;){const v=(await askQ({chips:['a','b','c'],ps:'<i class="a">decision</i>&gt;',ans:'abc'[o.findIndex(x=>x[3])]})).toLowerCase();ch=o['abc'.indexOf(v[0])];if(ch&&v)break;await type('Type a, b or c.',{cls:'dim'})}
+     cap+=ch[1];if(ch[1]<0)await crashFx();else play(ch[1]?'cash':'advance');
+     await say([ch[2]]);await type(`  capital ${ch[1]>=0?'+':''}${ch[1]}k → $${Math.max(0,cap)}k  [${bar(cap,220,22)}]`,{cls:ch[1]>0?'ok':ch[1]<0?'err':'dim',turbo:true});await type('  lesson: '+c.l,{cls:'info'});
+     const bf=BANKFIG[i];await fig(FIG[bf[0]](...bf.slice(1)),true);
+     if(cap<=0){bust=true;break}await wait()}
+   if(bust){await meltdown('BANK FAILURE','  First Terminal Bank is insolvent.\n  Depositors are outside. The regulators have changed the locks.\n\n  * You will start again from case 1.');out.innerHTML='';continue}
+   S.bankBest=Math.max(S.bankBest,cap);S.xp+=cap>=180?80:40;save();play('module');
+   await type(`CLOSING CAPITAL: $${cap}k · ${cap>=205?'Central banker material.':cap>=160?'A solid banker.':cap>=100?'You survived. Barely a profit.':'Still standing, but the board wants a word.'}`,{cls:'hd'});await fig(FIG.fireworks(),true);break}loc=''},
+ boss:async()=>{ctx='boss';for(;;){let b=100,y=100,qs=shuffle(ALLQ),i=0,hit=false;await type('FINAL EXAM · THE LEMON',{cls:'hd'});
+   await say(["Deep in the vault lives everything you didn't study. It has taken the shape of a lemon.","Every right answer squeezes it for 10. Every wrong answer, or 30 seconds of silence, costs you 25. No hints."]);await wait();
+   while(b>0&&y>0){out.innerHTML='';loc=`round ${i+1}`;await type(`THE LEMON · round ${i+1}`,{cls:'hd'});await fig(FIG.battle(b,y,hit),true);const q=qs[i++%qs.length],r=await quiz(q,{timeout:30,noHint:true});hit=r.ok;
+     if(r.ok){b-=10;S.xp+=10;play('hit');await type(`[ HIT -10 ] ${q.why||''}`,{cls:'ok'})}
+     else{y-=25;await crashFx();play('hurt');await type(`${r.timeout?'Too slow. ':''}It was ${r.correct}. ${q.why||''}`,{cls:'err'});await type('THE LEMON: "'+pick(['Sour, isn\'t it?','I knew you skimmed that part.','Average answer. I\'ll pay average.','Hidden attributes: you didn\'t study.'])+'"',{cls:'acc'})}
+     updateStatus();if(b>0&&y>0)await wait()}
+   if(b<=0){S.bossWins++;S.xp+=150;save();out.innerHTML='';play('chapter');await type(`THE LEMON HAS BEEN JUICED · +150 xp · you had ${y} hp left`,{cls:'hd'});await fig(FIG.trophy(),true);await fig(FIG.fireworks(),true);await say([`Chapter 11 is yours, ${S.name||'operator'}. Go and do the same to the exam.`]);break}
+   await meltdown('SQUEEZED','  The lemon wins this round.\n\n  * Rematch starts now, with fresh questions.\n  * Tip: run "learn" on the modules you missed, or "cheat".');out.innerHTML=''}loc=''},
+ crack:async()=>{ctx='crack';let queue=shuffle(GLOSS).slice(0,8),total=queue.length,done=0;await type('VAULT CRACKER · decrypt 8 terms',{cls:'hd'});
+   await say(["Each lock is a key term. I give the clue, you type the term. Three tries. Each miss, I brute-force a few letters for you.","Fail a lock and it goes to the back of the queue. Nobody leaves until all eight are open."]);
+   while(queue.length){const g=queue.shift(),shown=new Set(),mask=()=>[...g.n].map((ch,j)=>/[a-z]/.test(ch)&&!shown.has(j)?'▒':ch).join('');loc=`${done}/${total} open`;updateStatus();
+     await fig(FIG.decrypt(mask()));await type('CLUE: '+g.d,{cls:'info'});let ok=false;
+     for(let t=1;t<=3;t++){const v=await askQ({ps:`<i class="a">try ${t}/3</i>&gt;`,ans:g.n});if(norm(v)===norm(g.n)||norm(v)===norm(g.n)+'s'){ok=true;break}
+       const hid=shuffle([...g.n].map((c,j)=>j).filter(j=>/[a-z]/.test(g.n[j])&&!shown.has(j)));hid.slice(0,Math.ceil(hid.length/3)).forEach(j=>shown.add(j));
+       play('deny');if(t<3){await type('ACCESS DENIED. Brute-forcing...',{cls:'err',turbo:true});await type('  '+mask(),{cls:'acc',turbo:true})}}
+     if(ok){done++;S.xp+=10;if(!S.terms[g.n])S.terms[g.n]=1;save();play('grant');await type(`ACCESS GRANTED: ${g.n}`,{cls:'ok'});await type('  e.g. '+g.ex,{cls:'dim'})}
+     else{await type(`LOCKED OUT. It was: ${g.n}. Back of the queue.`,{cls:'err'});queue.push(g)}}
+   play('module');await type('ALL LOCKS OPEN · the vault is yours',{cls:'hd'});await fig(FIG.fireworks(),true);loc=''},
+ gallery:async()=>{skip=false;await type('PICTURE BOOK · the whole chapter in '+GALLERY.length+' animations',{cls:'hd'});for(let k=0;k<GALLERY.length;k++){const g=GALLERY[k];await type(`${k+1}. ${g[2]}`,{cls:'acc',turbo:true});await fig(FIG[g[0]](...g[1]),true)}await type('Scroll up and down. They all keep playing.',{cls:'dim',turbo:true})},
+ show:async a=>{const n=(a[0]||'').toLowerCase(),names=[...new Set(GALLERY.map(g=>g[0]))];if(!FIG[n]||!names.includes(n)){await type('animations: '+names.join(' · '),{cls:'dim',turbo:true});return}await fig(FIG[n](...a.slice(1).map(x=>isNaN(num(x))?x:num(x))))},
+ lab:async()=>{for(const l of ["*LAB*: every command takes numbers. Leave them off for the textbook case.","  lemons 50 20000      share of peaches %, peach owner's minimum","  rate 5 2 6 50        risk-free, safe premium, risky premium, safe %","  deflate -30          change in the price level, %","  ina equity 1000      or: ina debt 1000   (her own money)","  pool 100000 1000     loan size, deposit size","  diversify 50 10      number of loans, default chance %","  liquidity 18         % of deposits the bank keeps liquid","  ratio · ponzi        no numbers needed","  gallery              every animation in the chapter"])await type(l,{turbo:true})},
+ lemons:async a=>{const s=isNaN(num(a[0]))?50:num(a[0]),m=isNaN(num(a[1]))?20000:num(a[1]);await fig(FIG.lemons(s,m));const o=(s*20000+(100-s)*10000)/100;await type(o<m?`Offer ${fmt(o)} < minimum ${fmt(m)}: adverse selection. Try: lemons 80 17000`:`Offer ${fmt(o)} >= minimum ${fmt(m)}: the market survives. Try: lemons 30 20000`,{cls:'dim'})},
+ rate:figCmd('bonds',a=>{const v=a.map(num);return[isNaN(v[0])?5:v[0],isNaN(v[1])?2:v[1],isNaN(v[2])?6:v[2],isNaN(v[3])?50:v[3]]}),
+ deflate:figCmd('networth',a=>[isNaN(num(a[0]))?-30:num(a[0])]),
+ liquidity:async a=>{const r=isNaN(num(a[0]))?18:num(a[0]);await fig(FIG.liquidity(r));await type(r<12?'A thin cushion: watch the bank run short. Try: liquidity 18':'On a normal day about 10% is withdrawn, so this cushion is rarely breached. Try: liquidity 8',{cls:'dim'})},
+ ponzi:figCmd('ponzi',()=>[]),
+ ina:async a=>{const t=a[0]==='debt'?'debt':'equity',s=isNaN(num(a[1]))?1000:num(a[1]);await fig(FIG.ina(t,s));await type(t==='debt'?'Debt: slacking is her problem now, but your upside is capped and a failed gamble is yours. Hence covenants.':'Equity: she bears only her ownership share of any slacking. Try: ina equity 10000',{cls:'dim'})},
+ pool:async a=>{const l=isNaN(num(a[0]))?100000:num(a[0]),d=isNaN(num(a[1]))?1000:num(a[1]);if(d<=0||l<=0){await type('usage: pool <loan> <deposit>',{cls:'dim'});return}await fig(FIG.pool(l,d));await type(`savers needed = ${fmt(l)} / ${fmt(d)} = ${(l/d).toLocaleString()}`,{cls:'dim'})},
+ diversify:figCmd('diversify',a=>[isNaN(num(a[0]))?50:num(a[0]),isNaN(num(a[1]))?10:Math.max(1,Math.min(90,num(a[1])))]),
+ ratio:figCmd('ratio',()=>[]),
+ man:async a=>{const t=norm(a.join(' ').replace(/-/g,' '));if(!t){await type('man pages: '+GLOSS.map(g=>g.n.replace(/ /g,'-')).join(', '),{cls:'dim',turbo:true});return}
+   const g=GLOSS.find(x=>norm(x.n)===t)||GLOSS.find(x=>norm(x.n).includes(t));if(!g){await type('No manual entry for '+a.join(' '),{cls:'err'});return}
+   if(!S.terms[g.n]){S.terms[g.n]=1;save();play('pickup');updateStatus()}
+   for(const l of [`${g.n.toUpperCase()}(11)`,'*NAME*','    '+g.n,'*DESCRIPTION*','    '+g.d,'*EXAMPLE*','    '+g.ex,'*SEE ALSO*','    '+g.see.map(s=>s.replace(/ /g,'-')+'(11)').join(', ')])await type(l,{turbo:true})},
+ terms:async()=>{const n=Object.keys(S.terms).length;await type(`TERMS COLLECTED ${n}/${GLOSS.length}`,{cls:'hd'});for(const g of GLOSS)await type(S.terms[g.n]?`  [x] ${g.n}`:`  [ ] ${g.n.replace(/[a-z]/g,'▒')}`,{cls:S.terms[g.n]?'ok':'dim',turbo:true});await type('Terms are collected when TELLER first says them, when you crack them, or with man <term>.',{cls:'dim',turbo:true})},
+ ls:async()=>{await type(MODULES.map((m,i)=>`0${i+1}-${m.id}.txt`).concat(['cheatsheet.txt','formulas.txt']).join('   '),{turbo:true})},
+ cat:async a=>{const f=(a[0]||'').toLowerCase();if(!f){await type('usage: cat <file>   (see: ls)',{cls:'dim'});return}
+   if(f.startsWith('cheat'))return CMD.cheat();if(f.startsWith('formula')){for(const l of CHEAT.slice(11,18))await type(l,{turbo:true});return}
+   const i=MODULES.findIndex((m,k)=>f.startsWith('0'+(k+1))||f.includes(m.id)||f===String(k+1));if(i<0){await type(`cat: ${a[0]}: No such file`,{cls:'err'});return}
+   turbo=true;auto=true;try{await type(MODULES[i].title,{cls:'hd'});for(const s of MODULES[i].secs){await type('§ '+s.h,{cls:'hd2'});for(const b of s.beats)if(Array.isArray(b))for(const l of b)await type(l);else await fig(FIG[b.fig](...(b.a||[])),true)}}finally{turbo=false;auto=false}},
+ cheat:async()=>{skip=false;for(const l of CHEAT)await type(l,{turbo:true})},
+ reboot:async()=>{out.innerHTML='';await boot()},
+ reset:async()=>{const v=await rawAsk({chips:['y','n'],ps:'<i class="a">erase all progress? [y/n]</i>&gt;'});if(/^y/i.test(v||'')){const keep={theme:S.theme,sound:S.sound,vol:S.vol,snd:S.snd,typeSnd:S.typeSnd,wave:S.wave};S=Object.assign(FRESH(),keep);save();syncUI();out.innerHTML='';await boot()}},
+ whoami:async()=>type(S.name||'operator'),date:async()=>type(new Date().toString()),
+ sudo:async()=>type('student is not in the sudoers file. This incident will be reported to the Federal Reserve.',{cls:'err'}),
+ rm:async()=>type("rm: cannot remove 'vault': it is bolted to the floor",{cls:'err'}),
+ exit:async()=>type('There is no exit. Only Chapter 12.',{cls:'dim'}),
+ hello:async()=>say(['Hello. Deposits on the left, loans on the right.'])
+};
+const ALIAS={'1':'learn','2':'bank','3':'boss','4':'crack','5':'lab','6':'man','7':'gallery','?':'help',dir:'ls',type:'cat',quit:'exit',q:'exit',start:'learn',study:'learn',exam:'boss',test:'boss',sim:'lab',cheatsheet:'cheat',bonds:'rate',deflation:'deflate',networth:'deflate',glossary:'man',hi:'hello',pictures:'gallery',animations:'gallery',inventory:'terms',play:'show'};
+async function runCmd(v){const[c0,...a]=v.trim().split(/\s+/),c1=c0.toLowerCase(),c=SALIAS[c1]||ALIAS[c1]||c1,f=SYS[c]||CMD[c];
+  if(!f){play('deny');await type(TH[S.theme].nf(c0),{cls:'err',turbo:true});await type('Type *help* for the list.',{cls:'dim',turbo:true});return}
+  try{await f(a)}catch(e){turbo=false;auto=false;if(e===ABORT){await type('^C',{cls:'dim'});await type('Back at the shell. Finished modules are saved.',{cls:'dim',turbo:true})}else{console.error(e);await type('internal error: '+e.message,{cls:'err'})}}
+  ctx='shell';loc='';updateStatus()}
+async function menu(){skip=false;for(const l of ["*WHAT DO YOU WANT TO DO?*","  1  *learn*    guided course. I teach, I ask, you answer.","  2  *bank*     you run the bank. Eight decisions. Don't go bust.","  3  *boss*     final exam. Fight THE LEMON.","  4  *crack*    decrypt the key terms.","  5  *lab*      simulators you run with commands.","  6  *man*      look up any term.","  7  *gallery*  the whole chapter as looping animations.","Type a number or a command. *help* lists everything."])await type(l,{turbo:true})}
+async function shell(){for(;;){ctx='shell';updateStatus();const v=await rawAsk({chips:['learn','bank','boss','crack','gallery','lab','help']});if(v)await runCmd(v)}}
+
+/* ================= boot ================= */
+const rain=$('#rain');let rainT=null;
+function rainFx(on){clearInterval(rainT);rainT=null;if(!on||REDUCED)return;const c=rain.getContext('2d');let cols=[];const size=()=>{rain.width=innerWidth;rain.height=innerHeight;cols=Array.from({length:Math.ceil(innerWidth/16)},()=>Math.random()*-40)};size();onresize=size;
+  rainT=setInterval(()=>{if(document.hidden)return;c.fillStyle='rgba(0,0,0,.09)';c.fillRect(0,0,rain.width,rain.height);c.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--fg');c.font='15px monospace';cols.forEach((y,i)=>{c.fillText(pick([...'$¢€£¥0123456789%']),i*16,y*16);cols[i]=y*16>rain.height&&Math.random()>.975?0:y+1})},70)}
+function setTheme(n){if(!TH[n])n='linux';const t=TH[n],r=document.documentElement,c=t.c.split(' ');S.theme=n;
+  ['bg','fg','dim','acc','ok','err','info','bar','barfg','cbg','cfg'].forEach((k,i)=>r.style.setProperty('--'+k,c[i]));
+  r.style.setProperty('--glow',t.glow||'none');r.style.setProperty('--font',t.font||FONT);r.style.setProperty('--frame',t.frame||'transparent');r.style.setProperty('--fw',t.frame?'clamp(8px,3.2vw,36px)':'0px');r.style.setProperty('--bgimg',t.bgimg||'none');
+  r.dataset.cur=t.cur||'block';r.dataset.fx=t.fx||'';r.dataset.chrome=t.chrome||'none';r.toggleAttribute('data-upper',!!t.upper);
+  $('#ttl').textContent=t.title;rainFx(t.fx==='matrix');save();syncUI();if(mode==='ask'&&ctx==='shell')ps1El.innerHTML=t.ps1}
+function syncUI(){$('#bTheme').textContent='▦ '+(TH[S.theme]?TH[S.theme].label:'terminal');$('#sSpeed').value=S.speed;$('#sDiff').value=S.diff;$('#bSound').textContent='♪ '+(S.sound&&S.vol?S.vol+'%':'off');if(MG)MG.gain.value=Math.pow(S.vol/100,1.5)*.7;updateStatus()}
+$('#bTheme').onclick=e=>{e.target.blur();themePanel()};$('#bSound').onclick=e=>{e.target.blur();soundPanel()};
+$('#sSpeed').onchange=e=>{S.speed=e.target.value;save();e.target.blur()};$('#sDiff').onchange=e=>{S.diff=e.target.value;save();updateStatus();e.target.blur()};
+async function boot(){ctx='boot';skip=false;play('boot');for(const l of TH[S.theme].boot)await type(l,{cls:'dim',turbo:true});
+  await fig(FIG.logo());
+  if(!S.name){await say(["Vault terminal online. I am TELLER, the oldest machine in this bank.","I know Chapter 11 by heart: why banks exist, and the two information problems that haunt every loan.","I teach one piece at a time. After each piece I ask a question. Get it wrong and there are consequences."]);
+    await say(["Name for the logbook?"]);const v=await rawAsk({ps:'<i class="a">login</i>:',ans:'operator'});S.name=(v||'operator').slice(0,24);save();
+    await say([`Logged in as *${S.name}*. While I type, press Enter or Space to skip ahead. The top bar changes the terminal, the speed, the difficulty and the sound.`])}
+  else await say([`Welcome back, *${S.name}*. ${Object.keys(S.done).length}/8 modules done, ${S.xp} xp, ${Object.keys(S.terms).length}/${GLOSS.length} terms collected.`]);
+  await menu()}
+(async()=>{
+  if(!S.theme||!TH[S.theme]){setTheme('linux');await type('SELECT A TERMINAL',{cls:'hd'});await type('Pick one in the window. Not sure? Ubuntu is a good start.',{cls:'dim',turbo:true});await themePanel(true);out.innerHTML=''}
+  setTheme(S.theme);await boot();shell()})();
+window.__t={get mode(){return mode},get ctx(){return ctx},get ps(){return ps1El.textContent},get live(){return LIVE.length},get panel(){return !!panelEl}};
+</script>
+</body>
+</html>
