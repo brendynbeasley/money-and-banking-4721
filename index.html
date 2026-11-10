@@ -12891,6 +12891,10 @@ const SPEED={slow:{d:30,per:1,p:9},normal:{d:15,per:1,p:8},fast:{d:8,per:3,p:3},
 const ABORT={abort:true};
 let mode='idle',resolver=null,skip=false,turbo=false,auto=false,ctx='boot',loc='',integrity=100,streak=0,timer=null,hist=[],hi=0,askWords=0;
 const scroll=()=>{screen.scrollTop=screen.scrollHeight};
+/* keep the newest line in view whenever the reading area changes size (continue button, answer tiles, keypad, keyboard, rotation, text size) unless the reader has scrolled up */
+let stickBottom=true,lastScreenH=screen.clientHeight;
+screen.addEventListener('scroll',()=>{if(screen.clientHeight!==lastScreenH)return;stickBottom=screen.scrollHeight-screen.scrollTop-screen.clientHeight<48},{passive:true});
+if(window.ResizeObserver){const ro=new ResizeObserver(()=>{lastScreenH=screen.clientHeight;if(stickBottom)scroll()});ro.observe(screen);ro.observe(out)}
 function setMode(m){mode=m;document.body.classList.toggle('typing',m==='typing')}
 const clock=t=>t>90?Math.floor(t/60)+':'+String(t%60).padStart(2,'0'):t+'s';
 function updateStatus(){if(!C)return;if(vwz()<600){statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}hp ${integrity}% · ${syncTag()}xp ${S.xp}</span>`;return}statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}integrity ${bar(integrity,100,5)} ${integrity}% · streak ${streak} · ${syncTag()}xp ${S.xp} · terms ${termsGot(C)}/${C.gloss.length} · ${S.diff}</span>`}
