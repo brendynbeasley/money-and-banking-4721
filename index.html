@@ -7,24 +7,24 @@
 <meta name="mobile-web-app-capable" content="yes">
 <title>TELLER — Money &amp; Banking Terminal Tutor</title>
 <style>
-:root{--bg:#1e1e2e;--fg:#cdd6f4;--dim:#8a90aa;--acc:#f9e2af;--ok:#a6e3a1;--err:#f38ba8;--info:#89dceb;--bar:#313244;--barfg:#cdd6f4;--cbg:#11111b;--cfg:#f38ba8;--glow:none;--frame:transparent;--fw:0px;--bgimg:none;
+:root{--z:1;--bg:#1e1e2e;--fg:#cdd6f4;--dim:#8a90aa;--acc:#f9e2af;--ok:#a6e3a1;--err:#f38ba8;--info:#89dceb;--bar:#313244;--barfg:#cdd6f4;--cbg:#11111b;--cfg:#f38ba8;--glow:none;--frame:transparent;--fw:0px;--bgimg:none;
   --font:ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{background:var(--bg);background-image:var(--bgimg);color:var(--fg);font:15px/1.5 var(--font);text-shadow:var(--glow);overflow:hidden}
+body{background:var(--bg);background-image:var(--bgimg);color:var(--fg);font:calc(15px*var(--z))/1.5 var(--font);text-shadow:var(--glow);overflow:hidden}
 #rain{position:fixed;inset:0;width:100%;height:100%;z-index:0;opacity:.2;display:none}
 [data-fx~=matrix] #rain{display:block}
 #win{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;height:100dvh;border:var(--fw) solid var(--frame)}
-#bar{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--bar);color:var(--barfg);padding:6px 12px;font-size:13px;text-shadow:none;flex-wrap:wrap}
-#bar .l{display:flex;gap:10px;align-items:center;min-width:0}
-.dots{display:none;gap:6px}.dots i{width:11px;height:11px;border-radius:50%;background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+#bar{display:flex;gap:calc(10px*var(--z));align-items:center;justify-content:space-between;background:var(--bar);color:var(--barfg);padding:calc(6px*var(--z)) calc(12px*var(--z));font-size:calc(13px*var(--z));text-shadow:none;flex-wrap:wrap}
+#bar .l{display:flex;gap:calc(10px*var(--z));align-items:center;min-width:0}
+.dots{display:none;gap:calc(6px*var(--z))}.dots i{width:calc(11px*var(--z));height:calc(11px*var(--z));border-radius:50%;background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
 [data-chrome=mac] .dots{display:flex}
-.wbtn{display:none;letter-spacing:.5em;padding-left:6px}[data-chrome=win] .wbtn{display:inline}
+.wbtn{display:none;letter-spacing:.5em;padding-left:calc(6px*var(--z))}[data-chrome=win] .wbtn{display:inline}
 #ttl{white-space:pre;overflow:hidden;text-overflow:ellipsis}
-#bar .r{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-#bar select,#bar button{font:12px var(--font);background:transparent;color:inherit;border:1px solid currentColor;border-radius:3px;padding:2px 7px;cursor:pointer;opacity:.9}
+#bar .r{display:flex;gap:calc(6px*var(--z));align-items:center;flex-wrap:wrap}
+#bar select,#bar button{font:calc(12px*var(--z)) var(--font);background:transparent;color:inherit;border:1px solid currentColor;border-radius:calc(3px*var(--z));padding:2px calc(7px*var(--z));cursor:pointer;opacity:.9}
 #bar select option{color:#111;background:#fff}
-#screen{flex:1;overflow-y:auto;padding:14px 16px 30px;cursor:text;scrollbar-color:var(--dim) transparent}
+#screen{flex:1;overflow-y:auto;padding:calc(14px*var(--z)) calc(16px*var(--z)) calc(30px*var(--z));cursor:text;scrollbar-color:var(--dim) transparent}
 [data-upper] #screen{text-transform:uppercase}
 .ln{white-space:pre-wrap;word-break:break-word;min-height:1.5em}
 .say{padding-left:9ch;text-indent:-9ch}.say.cont{text-indent:0}
@@ -45,50 +45,50 @@ pre.fig i{font-style:normal}pre.fig .m{color:var(--acc)}pre.fig .g{color:var(--o
 [data-cur=bar] .cur{width:2px}
 body.typing .cur{animation:none}
 @keyframes blink{50%{opacity:0}}
-#chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-#chips button,.box button{font:inherit;font-size:.9em;color:var(--fg);background:transparent;border:1px solid var(--dim);border-radius:3px;padding:3px 10px;cursor:pointer;text-shadow:inherit;text-transform:inherit}
+#chips{display:flex;flex-wrap:wrap;gap:calc(8px*var(--z));margin-top:calc(10px*var(--z))}
+#chips button,.box button{font:inherit;font-size:.9em;color:var(--fg);background:transparent;border:1px solid var(--dim);border-radius:calc(3px*var(--z));padding:calc(3px*var(--z)) calc(10px*var(--z));cursor:pointer;text-shadow:inherit;text-transform:inherit}
 #chips button:hover,.box button:hover,.box button.on{background:var(--fg);color:var(--bg);text-shadow:none}
-#status{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--ok);color:var(--bg);padding:2px 10px;font-size:12.5px;text-shadow:none;font-weight:700}
-#status .e{background:var(--err);padding:0 4px}
+#status{display:flex;justify-content:space-between;gap:calc(12px*var(--z));flex-wrap:wrap;background:var(--ok);color:var(--bg);padding:2px calc(10px*var(--z));font-size:calc(12.5px*var(--z));text-shadow:none;font-weight:700}
+#status .e{background:var(--err);padding:0 calc(4px*var(--z))}
 #ghostf{position:fixed;left:0;bottom:0;width:1px;height:1px;overflow:hidden;opacity:0}
-#ghost{font-size:16px;width:200px}
-#fx{position:fixed;inset:0;z-index:2;pointer-events:none;display:none;background:repeating-linear-gradient(rgba(0,0,0,.2) 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.45))}
+#ghost{font-size:calc(16px*var(--z));width:calc(200px*var(--z))}
+#fx{position:fixed;inset:0;z-index:2;pointer-events:none;display:none;background:repeating-linear-gradient(rgba(0,0,0,.2) 0 1px,transparent 1px calc(3px*var(--z))),radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.45))}
 [data-fx~=crt] #fx{display:block}
-#crash{position:fixed;inset:0;background:var(--cbg);color:var(--cfg);padding:10vh 8vw;white-space:pre-wrap;font-size:clamp(13px,2vw,18px);z-index:9;text-shadow:none;cursor:pointer}
+#crash{position:fixed;inset:0;background:var(--cbg);color:var(--cfg);padding:10vh 8vw;white-space:pre-wrap;font-size:clamp(calc(13px*var(--z)),2vw,calc(18px*var(--z)));z-index:9;text-shadow:none;cursor:pointer}
 #crash[hidden]{display:none}
-.panel{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:12px;text-shadow:none}
-.box{background:var(--bg);color:var(--fg);border:2px solid var(--fg);box-shadow:8px 8px 0 rgba(0,0,0,.55);width:min(720px,100%);max-height:90vh;max-height:90dvh;overflow:auto;padding:0 16px 16px}
-.box h2{font:inherit;font-weight:700;background:var(--fg);color:var(--bg);margin:0 -16px 12px;padding:3px 16px;display:flex;justify-content:space-between;position:sticky;top:0}
-.box h2 button{border:0;color:var(--bg);padding:0 6px}.box h2 button:hover{background:var(--bg);color:var(--fg)}
-.box h3{font:inherit;font-weight:700;color:var(--acc);margin:14px 0 6px}
-.prow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
-.prow input[type=range]{flex:1;min-width:140px;accent-color:var(--acc)}
+.panel{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:calc(12px*var(--z));text-shadow:none}
+.box{background:var(--bg);color:var(--fg);border:2px solid var(--fg);box-shadow:calc(8px*var(--z)) calc(8px*var(--z)) 0 rgba(0,0,0,.55);width:min(calc(720px*var(--z)),100%);max-height:90vh;max-height:90dvh;overflow:auto;padding:0 calc(16px*var(--z)) calc(16px*var(--z))}
+.box h2{font:inherit;font-weight:700;background:var(--fg);color:var(--bg);margin:0 -16px calc(12px*var(--z));padding:calc(3px*var(--z)) calc(16px*var(--z));display:flex;justify-content:space-between;position:sticky;top:0}
+.box h2 button{border:0;color:var(--bg);padding:0 calc(6px*var(--z))}.box h2 button:hover{background:var(--bg);color:var(--fg)}
+.box h3{font:inherit;font-weight:700;color:var(--acc);margin:calc(14px*var(--z)) 0 calc(6px*var(--z))}
+.prow{display:flex;gap:calc(8px*var(--z));align-items:center;flex-wrap:wrap;margin:calc(8px*var(--z)) 0}
+.prow input[type=range]{flex:1;min-width:calc(140px*var(--z));accent-color:var(--acc)}
 .lvl button{border:0!important;padding:0 1px!important;font-size:1.3em!important;line-height:1;color:var(--acc)!important;background:none!important}
-.srow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--dim)}
-.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
-.sw button{text-align:left;padding:8px 10px!important;border-width:2px!important;font-size:.9em;text-transform:none!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sw button.cur-t{outline:3px solid var(--acc);outline-offset:1px}
+.srow{display:grid;grid-template-columns:1fr auto;gap:calc(10px*var(--z));align-items:center;padding:calc(4px*var(--z)) 0;border-bottom:1px dashed var(--dim)}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(calc(190px*var(--z)),1fr));gap:calc(8px*var(--z))}
+.sw button{text-align:left;padding:calc(8px*var(--z)) calc(10px*var(--z))!important;border-width:2px!important;font-size:.9em;text-transform:none!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw button.cur-t{outline:calc(3px*var(--z)) solid var(--acc);outline-offset:1px}
 .shake{animation:shake .45s}
-@keyframes shake{10%{transform:translate(-6px,2px)}25%{transform:translate(5px,-3px);filter:hue-rotate(40deg) contrast(1.4)}40%{transform:translate(-4px,3px)}60%{transform:translate(4px,1px);filter:invert(.15)}80%{transform:translate(-2px,-1px)}}
-@media (max-width:600px){body{font-size:13px}#screen{padding:10px 12px 24px}#status{font-size:11px}#ttl{display:none}}
+@keyframes shake{10%{transform:translate(-6px,2px)}25%{transform:translate(calc(5px*var(--z)),-3px);filter:hue-rotate(40deg) contrast(1.4)}40%{transform:translate(-4px,calc(3px*var(--z)))}60%{transform:translate(calc(4px*var(--z)),1px);filter:invert(.15)}80%{transform:translate(-2px,-1px)}}
+@media (max-width:600px){body{font-size:calc(13px*var(--z))}#screen{padding:calc(10px*var(--z)) calc(12px*var(--z)) calc(24px*var(--z))}#status{font-size:calc(11px*var(--z))}#ttl{display:none}}
 @media (prefers-reduced-motion:reduce){.cur,.shake{animation:none}}
 .figw{margin:.7em 0}.figw pre.fig{margin:0}
-.pp{font:inherit;font-size:.78em;color:var(--dim);background:none;border:1px solid var(--dim);border-radius:3px;padding:0 8px;margin-top:4px;cursor:pointer;text-transform:none;text-shadow:none}
+.pp{font:inherit;font-size:.78em;color:var(--dim);background:none;border:1px solid var(--dim);border-radius:calc(3px*var(--z));padding:0 calc(8px*var(--z));margin-top:calc(4px*var(--z));cursor:pointer;text-transform:none;text-shadow:none}
 .pp:hover{color:var(--bg);background:var(--fg)}
-.chrow{display:grid!important;grid-template-columns:2.5ch 1fr auto;gap:10px;width:100%;text-align:left;margin:3px 0;white-space:normal!important}
-.box button.chrow.on{outline:2px solid var(--acc)}div.chrow.off{color:var(--dim);padding:3px 10px;font-size:.9em}
+.chrow{display:grid!important;grid-template-columns:2.5ch 1fr auto;gap:calc(10px*var(--z));width:100%;text-align:left;margin:calc(3px*var(--z)) 0;white-space:normal!important}
+.box button.chrow.on{outline:2px solid var(--acc)}div.chrow.off{color:var(--dim);padding:calc(3px*var(--z)) calc(10px*var(--z));font-size:.9em}
 #sheet{display:none}
 html{-webkit-text-size-adjust:100%}button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}#screen{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-#bar{padding-top:calc(6px + env(safe-area-inset-top,0px));padding-left:calc(12px + env(safe-area-inset-left,0px));padding-right:calc(12px + env(safe-area-inset-right,0px))}
+#bar{padding-top:calc(calc(6px*var(--z)) + env(safe-area-inset-top,0px));padding-left:calc(calc(12px*var(--z)) + env(safe-area-inset-left,0px));padding-right:calc(calc(12px*var(--z)) + env(safe-area-inset-right,0px))}
 #status{padding-bottom:calc(2px + env(safe-area-inset-bottom,0px))}
-#dock{display:flex;flex-direction:column;gap:8px;padding:8px 12px;border-top:1px dashed var(--dim);max-height:50vh;overflow-y:auto;text-shadow:none}#dock:empty{display:none}
-#dock button{font:inherit;font-size:.9em;color:var(--fg);background:transparent;border:1px solid var(--dim);border-radius:4px;padding:3px 10px;cursor:pointer;text-transform:inherit;user-select:none;-webkit-user-select:none}
+#dock{display:flex;flex-direction:column;gap:calc(8px*var(--z));padding:calc(8px*var(--z)) calc(12px*var(--z));border-top:1px dashed var(--dim);max-height:50vh;overflow-y:auto;text-shadow:none}#dock:empty{display:none}
+#dock button{font:inherit;font-size:.9em;color:var(--fg);background:transparent;border:1px solid var(--dim);border-radius:calc(4px*var(--z));padding:calc(3px*var(--z)) calc(10px*var(--z));cursor:pointer;text-transform:inherit;user-select:none;-webkit-user-select:none}
 #dock button:hover{background:var(--fg);color:var(--bg)}#dock button:disabled{opacity:.22;pointer-events:none}
 #dock .go{border-color:var(--ok);color:var(--ok);font-weight:700}#dock .kb{color:var(--dim)}#dock .tile.bad{background:var(--err);color:var(--bg)}
-.tiles,.ctl,.chiprow{display:flex;flex-wrap:wrap;gap:8px}.numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:440px}.numpad .go{grid-column:span 3}
+.tiles,.ctl,.chiprow{display:flex;flex-wrap:wrap;gap:calc(8px*var(--z))}.numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(6px*var(--z));max-width:calc(440px*var(--z))}.numpad .go{grid-column:span 3}
 .opt.tap{cursor:pointer}.opt.tap:hover{color:var(--acc)}
-body.touch #dock button{min-height:44px;padding:8px 14px;font-size:16px}body.touch .numpad button{min-height:50px;font-size:20px}body.touch .opt.tap{border:1px solid var(--dim);border-radius:5px;padding:8px 10px;margin:6px 0}
-body.touch .pp{min-height:34px;padding:4px 14px;font-size:.9em}body.touch .box button{min-height:42px}body.touch #bar button{min-height:34px;padding:4px 10px;font-size:14px}
+body.touch #dock button{min-height:calc(44px*var(--z));padding:calc(8px*var(--z)) calc(14px*var(--z));font-size:calc(16px*var(--z))}body.touch .numpad button{min-height:calc(50px*var(--z));font-size:calc(20px*var(--z))}body.touch .opt.tap{border:1px solid var(--dim);border-radius:calc(5px*var(--z));padding:calc(8px*var(--z)) calc(10px*var(--z));margin:calc(6px*var(--z)) 0}
+body.touch .pp{min-height:calc(34px*var(--z));padding:calc(4px*var(--z)) calc(14px*var(--z));font-size:.9em}body.touch .box button{min-height:calc(42px*var(--z))}body.touch #bar button{min-height:calc(34px*var(--z));padding:calc(4px*var(--z)) calc(10px*var(--z));font-size:calc(14px*var(--z))}
 @media (max-width:700px){#bTheme,#sSpeed,#sDiff,#bSound{display:none}}
 @media print{html,body{height:auto;overflow:visible;background:#fff}#win,#fx,#rain,.panel,#crash,#ghostf{display:none!important}#sheet{display:block;color:#000;font:11pt/1.4 Georgia,serif;text-shadow:none;padding:0 6mm}#sheet h1{font-size:17pt}#sheet h2{font-size:13pt;border-bottom:1px solid #000;margin-top:14pt}#sheet pre{font:9.5pt/1.35 Menlo,Consolas,monospace;white-space:pre-wrap}#sheet li{margin-bottom:5pt;break-inside:avoid}#sheet dt{font-weight:700}#sheet dd{margin:0 0 5pt 0}}
 </style>
@@ -12893,7 +12893,7 @@ let mode='idle',resolver=null,skip=false,turbo=false,auto=false,ctx='boot',loc='
 const scroll=()=>{screen.scrollTop=screen.scrollHeight};
 function setMode(m){mode=m;document.body.classList.toggle('typing',m==='typing')}
 const clock=t=>t>90?Math.floor(t/60)+':'+String(t%60).padStart(2,'0'):t+'s';
-function updateStatus(){if(!C)return;if(innerWidth<600){statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}hp ${integrity}% · ${syncTag()}xp ${S.xp}</span>`;return}statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}integrity ${bar(integrity,100,5)} ${integrity}% · streak ${streak} · ${syncTag()}xp ${S.xp} · terms ${termsGot(C)}/${C.gloss.length} · ${S.diff}</span>`}
+function updateStatus(){if(!C)return;if(vwz()<600){statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}hp ${integrity}% · ${syncTag()}xp ${S.xp}</span>`;return}statusEl.innerHTML=`<span>[${tag()}] ${esc(ctx)}${loc?' '+esc(loc):''}</span><span>${timer!=null?`<span class="${timer<=10?'e':''}">T-${clock(timer)}</span> · `:''}integrity ${bar(integrity,100,5)} ${integrity}% · streak ${streak} · ${syncTag()}xp ${S.xp} · terms ${termsGot(C)}/${C.gloss.length} · ${S.diff}</span>`}
 const TALIAS={'screen and certify':'screening','monitor':'monitoring','diversifying':'diversification'};
 function collect(txt){if(!C)return;const t=txt.toLowerCase();let got=false;for(const g of C.gloss){const k=C.n+'|'+g.n;if(S.terms[k])continue;if(TALIAS[t]===g.n||t===g.n||t===g.n+'s'||(' '+t+' ').includes(' '+g.n.toLowerCase()+' ')){S.terms[k]=1;got=true}}if(got){save();play('pickup');updateStatus()}}
 
@@ -12955,16 +12955,23 @@ screen.addEventListener('click',e=>{if(e.target.closest('button,a,select'))retur
   if(mode==='typing')skip=true;else if(mode==='wait')resolver(true);else if(mode==='ask'&&!TOUCH())ghost.focus()});
 crashEl.addEventListener('click',()=>{if(mode==='crash')resolver()});
 
+function vwz(){return innerWidth/((S.scale||100)/100)}
+function applyScale(){S.scale=Math.max(60,Math.min(200,Math.round(S.scale||100)));document.documentElement.style.setProperty('--z',S.scale/100);try{updateStatus();scroll()}catch(e){}}
+const SCALES=[75,85,100,115,130,150,175];
 function setPanel(){return openPanel('SETTINGS',b=>{const row=(k,opts,cur)=>opts.map(x=>`<button type="button" data-${k}="${x[0]}" class="${cur===x[0]?'on':''}">${x[1]}</button>`).join('');const draw=()=>{
   b.innerHTML=`<div class="prow"><button type="button" data-o="book">▤ chapter ${C.n}</button><button type="button" data-o="theme">▦ terminal: ${TH[S.theme].label}</button><button type="button" data-o="sound">♪ sound: ${S.sound&&S.vol?S.vol+'%':'off'}</button></div>
   <h3>Answering</h3><div class="prow">${row('in',[['auto','auto (decides from your device)'],['touch','touch: tap answers'],['keys','keyboard: type answers']],S.input)}</div>
   <div class="dim">Touch mode: tap the answer, build 10-word answers from word tiles, use the number pad for sums, tap detention lines in order. A "keyboard" button is always there if you would rather type.</div>
+  <h3>Text &amp; UI size · ${S.scale||100}%</h3><div class="prow"><button type="button" data-zs="-">A−</button>${row('zm',SCALES.map(v=>[String(v),v+'%']),String(S.scale||100))}<button type="button" data-zs="+">A+</button></div>
+  <div class="dim">Saved separately on each device, so your iPhone, iPad and computer can each have their own size.</div>
   <h3>Typing speed</h3><div class="prow">${row('sp',[['slow','slow'],['normal','normal'],['fast','fast'],['instant','instant']],S.speed)}</div>
   <h3>Difficulty</h3><div class="prow">${row('df',[['chill','chill'],['normal','normal'],['hardcore','hardcore']],S.diff)}</div>
   <h3>Animations</h3><div class="prow">${row('an',[['1','playing'],['0','paused']],S.anim?'1':'0')}</div>
   <div class="prow" style="margin-top:14px"><button type="button" data-x>done</button></div>`;
   b.querySelectorAll('[data-o]').forEach(x=>x.onclick=()=>({book:bookPanel,theme:themePanel,sound:soundPanel})[x.dataset.o]());
   b.querySelectorAll('[data-in]').forEach(x=>x.onclick=()=>{S.input=x.dataset.in;save();syncUI();play('select');draw()});
+  b.querySelectorAll('[data-zm]').forEach(x=>x.onclick=()=>{S.scale=+x.dataset.zm;applyScale();save();play('select');draw()});
+  b.querySelectorAll('[data-zs]').forEach(x=>x.onclick=()=>{S.scale=(S.scale||100)+(x.dataset.zs==='+'?10:-10);applyScale();save();play('select');draw()});
   b.querySelectorAll('[data-sp]').forEach(x=>x.onclick=()=>{S.speed=x.dataset.sp;save();syncUI();play('select');draw()});
   b.querySelectorAll('[data-df]').forEach(x=>x.onclick=()=>{S.diff=x.dataset.df;save();syncUI();play('select');draw()});
   b.querySelectorAll('[data-an]').forEach(x=>x.onclick=()=>{setAnim(x.dataset.an==='1');play('select');draw()})};draw()})}
@@ -13158,7 +13165,7 @@ async function syncStart(){const h=location.hash.match(/^#sync=([\w-]+)/);if(h){
 addEventListener('pagehide',()=>{if(SY.ready)syncPush(true)});
 document.addEventListener('visibilitychange',()=>{if(!syncTok())return;if(document.visibilityState==='hidden'){if(SY.ready)syncPush(true)}else syncPull().then(()=>{updateStatus();syncSoon()}).catch(()=>{})});
 const CMD={
- help:async()=>{skip=false;for(const l of ["*STUDY*  (all for the current chapter)","  learn [n]     guided lessons. I teach, I ask. Wrong answers have consequences.","  resume        pick up exactly where you stopped","  ten           the professor's format: explain it in 10 words or less","  calc          calculation drills with fresh numbers and worked solutions","*PROVE IT*","  exam          his exam format: short answers + calculations, marked at the end","  boss          fight the chapter boss. 30 seconds a question.","  crack         decrypt key terms from their clues","  review        every question you have missed, across all chapters",...(C.cases?["  bank          you are the loan officer. Eight decisions. Don't go bust."]:[]),"*LOOK*","  gallery       every animation in the chapter (show <n> plays one)","  lab           this chapter's simulators",...(C.lab||[]).map(l=>'    '+padE(l.usage,36)+(l.eg?'e.g. '+l.eg:'')),"  anim pause|play   stop or start all animations (each has its own button too)","*REFERENCE*","  man [term] · terms · cheat · ls · cat <file> · print (a paper study sheet)","*THE BOOK*","  book          all 23 chapters and your progress      chapter <n>   switch","*SYSTEM*","  sync <token>  turn on automatic GitHub sync (once per device) · sync off","  code          get your progress code / link    load <code>   restore it on any device","  menu · theme [name|next|random] · sound · volume [0-100] · speed [slow|normal|fast|instant]","  difficulty [chill|normal|hardcore] · input [auto|touch|keys] · status · clear · reboot · reset","*KEYS*  while I type: Enter, Space or click skips ahead.  quit leaves a mode."])await type(l,{turbo:true})},
+ help:async()=>{skip=false;for(const l of ["*STUDY*  (all for the current chapter)","  learn [n]     guided lessons. I teach, I ask. Wrong answers have consequences.","  resume        pick up exactly where you stopped","  ten           the professor's format: explain it in 10 words or less","  calc          calculation drills with fresh numbers and worked solutions","*PROVE IT*","  exam          his exam format: short answers + calculations, marked at the end","  boss          fight the chapter boss. 30 seconds a question.","  crack         decrypt key terms from their clues","  review        every question you have missed, across all chapters",...(C.cases?["  bank          you are the loan officer. Eight decisions. Don't go bust."]:[]),"*LOOK*","  gallery       every animation in the chapter (show <n> plays one)","  lab           this chapter's simulators",...(C.lab||[]).map(l=>'    '+padE(l.usage,36)+(l.eg?'e.g. '+l.eg:'')),"  anim pause|play   stop or start all animations (each has its own button too)","*REFERENCE*","  man [term] · terms · cheat · ls · cat <file> · print (a paper study sheet)","*THE BOOK*","  book          all 23 chapters and your progress      chapter <n>   switch","*SYSTEM*","  sync <token>  turn on automatic GitHub sync (once per device) · sync off","  code          get your progress code / link    load <code>   restore it on any device","  menu · theme [name|next|random] · sound · volume [0-100] · speed [slow|normal|fast|instant]","  size [75-200|+|-|reset]   make text and buttons bigger or smaller (also in ≡ settings)","  difficulty [chill|normal|hardcore] · input [auto|touch|keys] · status · clear · reboot · reset","*KEYS*  while I type: Enter, Space or click skips ahead.  quit leaves a mode."])await type(l,{turbo:true})},
  menu:async()=>{out.innerHTML='';await mainMenu()},
  sync:async a=>{const t=(a[0]||'').trim();
    if(t==='off'){setSyncTok('');SY.ready=false;await type('Sync turned off on this device. Progress still saves here.',{cls:'dim'});return}
@@ -13166,6 +13173,8 @@ const CMD={
      try{await syncPull();await syncPush();play('grant');await type('SYNC ON · this device now saves your progress to GitHub automatically.',{cls:'ok'});updateStatus()}catch(e){play('deny');await type('Could not connect: '+(SY.err||e.message)+'. Check the token has Contents: read and write on teller-chapter11.',{cls:'err'})}return}
    if(!syncTok()){await type('Sync is off on this device. To turn it on: sync <your GitHub token>',{cls:'dim'});return}
    try{await syncPull();await syncPush();await type('Synced with GitHub · xp '+S.xp,{cls:'ok'});updateStatus()}catch(e){await type('Sync problem: '+(SY.err||e.message),{cls:'err'})}},
+ size:async a=>{const v=(a[0]||'').replace('%','');if(!v){await type(`size is ${S.scale||100}%. Use: size 75-200 · size + · size - · size reset`,{cls:'dim'});return}
+   S.scale=v==='+'?(S.scale||100)+10:v==='-'?(S.scale||100)-10:v==='reset'?100:+v||100;applyScale();save();await type(`size → ${S.scale}%`,{cls:'dim',turbo:true})},
  code:async()=>{let c;try{c=await makeCode()}catch(e){await type('Could not make a code in this browser.',{cls:'err'});return}
    const link=location.origin+location.pathname+'#p='+c;
    await type('YOUR PROGRESS CODE',{cls:'hd'});await type(c,{cls:'acc'});
@@ -13268,7 +13277,7 @@ const CMD={
  exit:async()=>type('There is no exit. Only the next chapter.',{cls:'dim'}),
  hello:async()=>say(['Hello. Deposits on the left, loans on the right.'])
 };
-const ALIAS={'1':'learn','2':'ten','3':'calc','4':'exam','5':'boss','6':'crack','7':'review','8':'gallery','9':'book','?':'help',dir:'ls',type:'cat',quit:'exit',q:'exit',start:'learn',study:'learn',continue:'resume',test:'exam',sim:'lab',cheatsheet:'cheat',glossary:'man',hi:'hello',pictures:'gallery',inventory:'terms',play:'show',ch:'chapter',goto:'chapter',cd:'chapter',chapters:'book',map:'book',professor:'ten',short:'ten',explain:'ten',drill:'calc',mistakes:'review',sheet:'print',home:'menu',main:'menu'};
+const ALIAS={zoom:'size',scale:'size',font:'size','1':'learn','2':'ten','3':'calc','4':'exam','5':'boss','6':'crack','7':'review','8':'gallery','9':'book','?':'help',dir:'ls',type:'cat',quit:'exit',q:'exit',start:'learn',study:'learn',continue:'resume',test:'exam',sim:'lab',cheatsheet:'cheat',glossary:'man',hi:'hello',pictures:'gallery',inventory:'terms',play:'show',ch:'chapter',goto:'chapter',cd:'chapter',chapters:'book',map:'book',professor:'ten',short:'ten',explain:'ten',drill:'calc',mistakes:'review',sheet:'print',home:'menu',main:'menu'};
 async function runCmd(v){const[c0,...a]=v.trim().split(/\s+/),c1=c0.toLowerCase(),c=SALIAS[c1]||ALIAS[c1]||c1,lab=(C.lab||[]).find(l=>l.cmd===c1),f=lab?(x=>labRun(lab,x)):SYS[c]||CMD[c];
   if(!f){play('deny');await type(TH[S.theme].nf(c0),{cls:'err',turbo:true});await type('Type *help* for the list, or *menu*.',{cls:'dim',turbo:true});return}
   try{await f(a)}catch(e){turbo=false;auto=false;if(e===ABORT){await type('^C',{cls:'dim'});await type('Back at the shell. Your place is saved: type *resume* or *menu*.',{cls:'dim',turbo:true})}else{console.error(e);await type('internal error: '+e.message,{cls:'err'})}}
@@ -13288,7 +13297,7 @@ const vaultFig=()=>{const W=42,H=9,cx=20,inner=Array.from({length:H},()=>rep(' '
   return{n:46,fps:11,once:1,r:i=>{const door=Array.from({length:H},()=>rep('▒',W)),ph=i%2,d=["  .-'''''-.  ",ph?" /  \\   /  \\ ":" /    |    \\ ",ph?"|     ●     |":"|  ───●───  |",ph?" \\  /   \\  / ":" \\    |    / ","  '-.....-'  "];if(i<26)d.forEach((s,k)=>put(door,2+k,s));
     const k=i<=26?-1:(i-26)*1.15,rows=door.map((row,r)=>[...row].map((ch,x)=>Math.abs(x-cx)<=k?inner[r][x]:ch).join(''));
     return[' ╔'+rep('═',W)+'╗',...rows.map(r=>' ║'+r+'║'),' ╚'+rep('═',W)+'╝',' COMBINATION  '+(i>=6?'23':'··')+' · '+(i>=12?'11':'··')+' · '+(i>=18?'04':'··')+(i>=22?'    ACCESS GRANTED':'')].join('\n')}}};
-async function mainMenu(){skip=false;const st=cs(C.n),nd=CHN().filter(n=>modsDone(BOOK.ch[n])>=BOOK.ch[n].modules.length).length,p=S.pos&&BOOK.ch[S.pos.c]?S.pos:null,wide=innerWidth>=760;
+async function mainMenu(){skip=false;const st=cs(C.n),nd=CHN().filter(n=>modsDone(BOOK.ch[n])>=BOOK.ch[n].modules.length).length,p=S.pos&&BOOK.ch[S.pos.c]?S.pos:null,wide=vwz()>=760;
   const I=[['1','learn','guided lessons with checkpoints'],['2','ten','professor mode: 10 words or less'],['3','calc','calculation drills, fresh numbers'],['4','exam','his format, marked at the end'],['5','boss','fight '+(C.boss?C.boss.name:'THE LEMON')],['6','crack','decrypt the key terms'],['7','review','your mistakes, all chapters ('+S.miss.length+')'],['8','gallery','every animation in the chapter'],['9','book','change chapter ('+CHN().length+' loaded)']];
   const cell=(x,w)=>x[0]+' *'+x[1]+'*'+rep(' ',8-x[1].length)+' '+x[2]+rep(' ',(w||0)-11-x[2].length);
   await fig(titleFig(),true);
@@ -13318,7 +13327,7 @@ async function boot(full){ctx='boot';skip=false;play('boot');for(const l of TH[S
     await say(["Name for the logbook?"]);const v=await rawAsk({ps:'<i class="a">login</i>:',ans:'operator',chips:TOUCH()?['trainee']:[]});if(TOUCH())0;S.name=(v||'operator').slice(0,24);save();
     await say([`Logged in as *${S.name}*. While I type, Enter or Space skips ahead. Every animation has a pause button. The ≡ button at the top holds the settings: terminal, sound, speed, difficulty, touch or keyboard.`,"Which chapter are you on? Pick it in the window."]);await bookPanel(true);out.innerHTML=''}
   await mainMenu()}
-(async()=>{await syncStart();setChapter(S.cur||11);await importFromHash();
+(async()=>{applyScale();await syncStart();setChapter(S.cur||11);await importFromHash();
   if(!S.theme||!TH[S.theme]){setTheme('dos');await type('SELECT A TERMINAL',{cls:'hd'});await type('Pick one in the window. Not sure? MS-DOS is the house style.',{cls:'dim',turbo:true});await themePanel(true);out.innerHTML=''}
   setTheme(S.theme);await boot();shell()})();
 window.__t={get mode(){return mode},get ctx(){return ctx},get ps(){return ps1El.textContent},get live(){return LIVE.length},get panel(){return !!panelEl},get ch(){return C.n}};
