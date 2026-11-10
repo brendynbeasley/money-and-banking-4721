@@ -12735,6 +12735,12 @@ const cs=n=>S.ch[n]||(S.ch[n]={done:{},boss:0,exam:0});
 if(S.v!==3){if(S.done){cs(11).done=S.done;delete S.done}if(S.bossWins){cs(11).boss=S.bossWins;delete S.bossWins}const t={};Object.keys(S.terms||{}).forEach(k=>t[k.includes('|')?k:'11|'+k]=1);S.terms=t;if(S.v!==2)S.sound=true;S.v=3}
 S.snd=S.snd||{};S.terms=S.terms||{};S.miss=S.miss||[];S.ch=S.ch||{};
 const save=()=>store.set(S);
+/* autosave: after every tap/keypress, every few seconds, and whenever the page is left */
+(()=>{let q=0;const soon=()=>{if(q)return;q=setTimeout(()=>{q=0;save()},250)};
+ ['keydown','pointerup','touchend','change','input'].forEach(ev=>addEventListener(ev,soon,true));
+ setInterval(save,4000);
+ addEventListener('pagehide',save);addEventListener('beforeunload',save);addEventListener('blur',save);addEventListener('freeze',save);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});})();
 const CHN=()=>Object.keys(BOOK.ch).map(Number).sort((a,b)=>a-b);
 let C=null;
 const tag=()=>'ch'+String(C?C.n:11).padStart(2,'0');
@@ -13034,16 +13040,16 @@ function addMiss(e){if(!S.miss.some(x=>mkey(x)===mkey(e))){S.miss.push(e);if(S.m
 function dropMiss(e){S.miss=S.miss.filter(x=>mkey(x)!==mkey(e));save()}
 
 /* ================= mode: learn ================= */
-async function playSection(sec,si,replay){turbo=replay;auto=replay;try{
-  await type(`§${si+1} ${sec.h}${replay?'  (replay ▶▶)':''}`,{cls:'hd'});
-  for(const b of sec.beats){if(Array.isArray(b)){await say(b);await wait()}else await fig(figOf(b),replay)}
+async function playSection(sec,si,replay,startBi=0){turbo=replay;auto=replay;if(replay)startBi=0;try{
+  await type(`§${si+1} ${sec.h}${replay?'  (replay ▶▶)':''}${startBi>0?'  (picking up where you left off)':''}`,{cls:'hd'});
+  for(let bi=startBi;bi<sec.beats.length;bi++){const b=sec.beats[bi];if(Array.isArray(b)){await say(b);await wait()}else await fig(figOf(b),replay);if(!replay&&S.pos&&S.pos.mi!=null){S.pos.bi=bi+1;save()}}
  }finally{turbo=false;auto=false}}
-async function runModule(mi,startSi=0){const M=C.modules[mi],NM=C.modules.length;
+async function runModule(mi,startSi=0,startBi=0){const M=C.modules[mi],NM=C.modules.length;
   for(let first=true;;first=false){integrity=100;streak=0;let dead=false;loc=`${mi+1}/${NM}`;updateStatus();
     await type(`MODULE ${mi+1} OF ${NM} · ${M.title}`,{cls:'hd'});
-    for(let si=first?startSi:0;si<M.secs.length&&!dead;si++){const sec=M.secs[si];let fails=0,replay=false,show=true;S.pos={c:C.n,mi,si};save();
+    for(let si=first?startSi:0;si<M.secs.length&&!dead;si++){const sec=M.secs[si];let fails=0,replay=false,show=true,sbi=(first&&si===startSi)?startBi:0;S.pos={c:C.n,mi,si,bi:sbi};save();
       for(;;){loc=`${mi+1}/${NM} §${si+1}/${M.secs.length}`;updateStatus();
-        if(show)await playSection(sec,si,replay);
+        if(show){await playSection(sec,si,replay,sbi);sbi=0}
         await type('CHECKPOINT',{cls:'hd2'});
         const qi=fails%sec.q.length,q=sec.q[qi],r=await quiz(q);let bad=null;
         if(!r.ok)bad={t:'q',i:qi,correct:r.correct,why:q.why,line:sec.line};
@@ -13064,7 +13070,7 @@ async function runModule(mi,startSi=0){const M=C.modules[mi],NM=C.modules.length
   const all=modsDone(C)===NM;play(all&&first?'chapter':'module');
   await type(`MODULE ${mi+1} COMPLETE · +50 xp · integrity ${integrity}%`,{cls:'hd'});await fig(FIG.fireworks(),true);
 }
-async function learnFrom(mi,si){for(;mi<C.modules.length;mi++,si=0){ctx='learn';await runModule(mi,si);
+async function learnFrom(mi,si,bi=0){for(;mi<C.modules.length;mi++,si=0,bi=0){ctx='learn';await runModule(mi,si,bi);
   if(mi===C.modules.length-1){await fig(FIG.trophy(),true);await say([`That was all of chapter ${C.n}. Now prove it: *ten*, *exam*, then *boss*.`]);break}
   const v=await askQ({chips:['y','n'],ps:'<i class="a">next module? [y/n]</i>&gt;',ans:'y'});if(!/^y/i.test(v))break}loc=''}
 
@@ -13094,7 +13100,7 @@ const CMD={
  learn:async a=>{let mi=parseInt(a[0])-1;
    if(isNaN(mi)){for(let i=0;i<C.modules.length;i++)await type(`  ${i+1}  [${cs(C.n).done[i]?'x':' '}] ${C.modules[i].title}`,{turbo:true});const nx=C.modules.findIndex((m,i)=>!cs(C.n).done[i]);const v=await askQ({chips:C.modules.map((m,i)=>String(i+1)),ps:'<i class="a">module</i>&gt;',ans:String(nx<0?1:nx+1)});mi=parseInt(v)-1}
    if(!(mi>=0&&mi<C.modules.length)){await type('No such module.',{cls:'err'});return}await learnFrom(mi,0)},
- resume:async()=>{const p=S.pos;if(!p||!BOOK.ch[p.c]){await type('Nothing to resume. Type *learn*.',{cls:'dim'});return}if(p.c!==C.n)setChapter(p.c);await type(`Resuming chapter ${p.c}, module ${p.mi+1}, section ${p.si+1}.`,{cls:'dim',turbo:true});await learnFrom(p.mi,p.si)},
+ resume:async()=>{const p=S.pos;if(!p||!BOOK.ch[p.c]){await type('Nothing to resume. Type *learn*.',{cls:'dim'});return}if(p.c!==C.n)setChapter(p.c);await type(`Resuming chapter ${p.c}, module ${p.mi+1}, section ${p.si+1}.`,{cls:'dim',turbo:true});await learnFrom(p.mi,p.si,p.bi||0)},
  ten:async()=>{ctx='ten';const pool=allSA(C);if(!pool.length){await type('No short-answer questions in this chapter yet.',{cls:'dim'});return}let queue=shuffle(pool).slice(0,10),n=0,ok=0;const seen=new Set();
    await type(`PROFESSOR MODE · ${queue.length} questions · 10 words or less`,{cls:'hd'});await say(["Explain it back to me. Ten words, no more. Miss one and you type the model answer, then see it again."]);
    while(queue.length){const it=queue.shift();loc=`${ok} right · ${queue.length+1} left`;updateStatus();const g=await askSA(it);n++;
