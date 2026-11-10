@@ -13066,7 +13066,7 @@ async function runModule(mi,startSi=0,startBi=0){const M=C.modules[mi],NM=C.modu
     if(!dead)break;
     await meltdown('CORE MELTDOWN',`  A fatal exception 0x11 has occurred in MODULE ${mi+1}.\n\n  ${S.diff==='hardcore'?'Hardcore mode: one wrong answer is fatal.':'Integrity reached 0%.'}\n  Everything from this module has been dumped on the vault floor.\n\n  * The module will restart from section 1.\n  * Tip: type "hint" at a question, or "difficulty chill".`);
     out.innerHTML='';await say([`Rebooted. Module ${mi+1}, from the top, ${S.name||'operator'}.`])}
-  const st=cs(C.n),first=!st.done[mi];st.done[mi]=1;S.xp+=50;S.pos=mi+1<NM?{c:C.n,mi:mi+1,si:0}:null;save();updateStatus();
+  const st=cs(C.n),first=!st.done[mi];st.done[mi]=1;S.xp+=50;S.pos=mi+1<NM?{c:C.n,mi:mi+1,si:0}:null;save();codeDue=true;updateStatus();
   const all=modsDone(C)===NM;play(all&&first?'chapter':'module');
   await type(`MODULE ${mi+1} COMPLETE · +50 xp · integrity ${integrity}%`,{cls:'hd'});await fig(FIG.fireworks(),true);
 }
@@ -13094,9 +13094,51 @@ const SYS={
 };
 const gal=()=>{const g=[];C.modules.forEach(m=>m.secs.forEach(s=>s.beats.forEach(b=>{if(!Array.isArray(b))g.push([b,s.h])})));return g};
 const labRun=async(l,a)=>{const r=l.run(a)||{};if(r.fig)await fig(getFig(C,r.fig,r.a));for(const s of [].concat(r.say||[]))await type(s,{cls:'dim'})};
+/* ================= progress codes ================= */
+const B32='0123456789abcdefghjkmnpqrstvwxyz';let codeDue=false,hashMsg=null;
+const b32e=u=>{let o='',v=0,b=0;for(const x of u){v=(v<<8)|x;b+=8;while(b>=5){o+=B32[(v>>>(b-5))&31];b-=5}v&=(1<<b)-1}if(b)o+=B32[(v<<(5-b))&31];return o};
+const b32d=t=>{const o=[];let v=0,b=0;for(const ch of t){const i=B32.indexOf(ch);if(i<0)throw new Error('bad char');v=(v<<5)|i;b+=5;if(b>=8){o.push((v>>>(b-8))&255);b-=8}v&=(1<<b)-1}return new Uint8Array(o)};
+const ck=t=>{let h=7;for(const ch of t)h=(h*31+B32.indexOf(ch))%1024;return B32[h>>5]+B32[h&31]};
+const pipeB=async(u,T)=>new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(T)).arrayBuffer());
+const mask2hex=bits=>{let h='';for(let i=0;i<bits.length;i+=4){let n=0;for(let j=0;j<4;j++)if(bits[i+j])n|=1<<j;h+=n.toString(16)}return h.replace(/0+$/,'')};
+const hex2mask=h=>{const o=[];for(const c of h||''){const n=parseInt(c,16)||0;for(let j=0;j<4;j++)o.push(!!(n&(1<<j)))}return o};
+function packState(){const ch={},t={};
+  for(const n of Object.keys(S.ch)){const st=S.ch[n],c=BOOK.ch[n];if(!c)continue;const d=mask2hex(c.modules.map((_,i)=>!!st.done[i]));if(d||st.boss||st.exam)ch[n]=[d,st.boss||0,st.exam||0]}
+  for(const n of CHN()){const c=BOOK.ch[n];const m=mask2hex(c.gloss.map(g=>!!S.terms[n+'|'+g.n]));if(m)t[n]=m}
+  const p=S.pos?[S.pos.c,S.pos.mi,S.pos.si,S.pos.bi||0]:0;
+  return{v:1,n:S.name,x:S.xp,c:S.cur,p,ch,t,m:S.miss.map(e=>[e.c,e.m,e.s,e.t==='sa'?1:0,e.i])}}
+async function makeCode(){const raw=new TextEncoder().encode(JSON.stringify(packState()));let body,pre='a';
+  try{body=await pipeB(raw,new CompressionStream('deflate-raw'))}catch(e){body=raw;pre='b'}
+  const c=pre+b32e(body);return c+ck(c)}
+async function readCode(str){const t=(str||'').toLowerCase().replace(/^.*#p=/,'').replace(/[o]/g,'0').replace(/[il]/g,'1').replace(/[^0-9a-z]/g,'');
+  if(t.length<4)throw new Error('too short');const c=t.slice(0,-2);if(ck(c)!==t.slice(-2))throw new Error('checksum');
+  let body=b32d(c.slice(1));if(c[0]==='a')body=await pipeB(body,new DecompressionStream('deflate-raw'));else if(c[0]!=='b')throw new Error('version');
+  return JSON.parse(new TextDecoder().decode(body))}
+function mergeState(d){let added=0;
+  if(d.n&&(!S.name||S.name==='operator'))S.name=String(d.n).slice(0,24);
+  S.xp=Math.max(S.xp||0,+d.x||0);
+  for(const n of Object.keys(d.ch||{})){const c=BOOK.ch[n];if(!c)continue;const st=cs(+n),[h,b,e]=d.ch[n];hex2mask(h).forEach((on,i)=>{if(on&&i<c.modules.length&&!st.done[i]){st.done[i]=1;added++}});st.boss=Math.max(st.boss||0,+b||0);st.exam=Math.max(st.exam||0,+e||0)}
+  for(const n of Object.keys(d.t||{})){const c=BOOK.ch[n];if(!c)continue;hex2mask(d.t[n]).forEach((on,i)=>{const g=c.gloss[i];if(on&&g&&!S.terms[n+'|'+g.n]){S.terms[n+'|'+g.n]=1;added++}})}
+  for(const a of d.m||[]){const e={c:a[0],m:a[1],s:a[2],t:a[3]?'sa':'q',i:a[4]};if(!S.miss.some(x=>mkey(x)===mkey(e)))S.miss.push(e)}
+  if(S.miss.length>300)S.miss=S.miss.slice(-300);
+  if(Array.isArray(d.p)&&BOOK.ch[d.p[0]])S.pos={c:d.p[0],mi:d.p[1],si:d.p[2],bi:d.p[3]||0};
+  if(d.c&&BOOK.ch[d.c])S.cur=d.c;
+  save();return added}
+async function codeNote(){try{const c=await makeCode();await type('Progress saved. Your progress code: '+c,{cls:'info'});await type('Type *code* to copy it or get a link · *load <code>* on any device to restore.',{cls:'dim',turbo:true})}catch(e){}}
+async function importFromHash(){const h=location.hash;if(!/^#p=/.test(h))return;try{const d=await readCode(h);mergeState(d);history.replaceState(null,'',location.pathname+location.search);if(S.cur&&BOOK.ch[S.cur])setChapter(S.cur);hashMsg=['PROGRESS LOADED FROM YOUR LINK · xp '+S.xp,'ok']}catch(e){hashMsg=['That progress link looks damaged, so nothing was loaded.','err']}}
 const CMD={
- help:async()=>{skip=false;for(const l of ["*STUDY*  (all for the current chapter)","  learn [n]     guided lessons. I teach, I ask. Wrong answers have consequences.","  resume        pick up exactly where you stopped","  ten           the professor's format: explain it in 10 words or less","  calc          calculation drills with fresh numbers and worked solutions","*PROVE IT*","  exam          his exam format: short answers + calculations, marked at the end","  boss          fight the chapter boss. 30 seconds a question.","  crack         decrypt key terms from their clues","  review        every question you have missed, across all chapters",...(C.cases?["  bank          you are the loan officer. Eight decisions. Don't go bust."]:[]),"*LOOK*","  gallery       every animation in the chapter (show <n> plays one)","  lab           this chapter's simulators",...(C.lab||[]).map(l=>'    '+padE(l.usage,36)+(l.eg?'e.g. '+l.eg:'')),"  anim pause|play   stop or start all animations (each has its own button too)","*REFERENCE*","  man [term] · terms · cheat · ls · cat <file> · print (a paper study sheet)","*THE BOOK*","  book          all 23 chapters and your progress      chapter <n>   switch","*SYSTEM*","  menu · theme [name|next|random] · sound · volume [0-100] · speed [slow|normal|fast|instant]","  difficulty [chill|normal|hardcore] · input [auto|touch|keys] · status · clear · reboot · reset","*KEYS*  while I type: Enter, Space or click skips ahead.  quit leaves a mode."])await type(l,{turbo:true})},
+ help:async()=>{skip=false;for(const l of ["*STUDY*  (all for the current chapter)","  learn [n]     guided lessons. I teach, I ask. Wrong answers have consequences.","  resume        pick up exactly where you stopped","  ten           the professor's format: explain it in 10 words or less","  calc          calculation drills with fresh numbers and worked solutions","*PROVE IT*","  exam          his exam format: short answers + calculations, marked at the end","  boss          fight the chapter boss. 30 seconds a question.","  crack         decrypt key terms from their clues","  review        every question you have missed, across all chapters",...(C.cases?["  bank          you are the loan officer. Eight decisions. Don't go bust."]:[]),"*LOOK*","  gallery       every animation in the chapter (show <n> plays one)","  lab           this chapter's simulators",...(C.lab||[]).map(l=>'    '+padE(l.usage,36)+(l.eg?'e.g. '+l.eg:'')),"  anim pause|play   stop or start all animations (each has its own button too)","*REFERENCE*","  man [term] · terms · cheat · ls · cat <file> · print (a paper study sheet)","*THE BOOK*","  book          all 23 chapters and your progress      chapter <n>   switch","*SYSTEM*","  code          get your progress code / link    load <code>   restore it on any device","  menu · theme [name|next|random] · sound · volume [0-100] · speed [slow|normal|fast|instant]","  difficulty [chill|normal|hardcore] · input [auto|touch|keys] · status · clear · reboot · reset","*KEYS*  while I type: Enter, Space or click skips ahead.  quit leaves a mode."])await type(l,{turbo:true})},
  menu:async()=>{out.innerHTML='';await mainMenu()},
+ code:async()=>{let c;try{c=await makeCode()}catch(e){await type('Could not make a code in this browser.',{cls:'err'});return}
+   const link=location.origin+location.pathname+'#p='+c;
+   await type('YOUR PROGRESS CODE',{cls:'hd'});await type(c,{cls:'acc'});
+   await type('On another device, type *load* and paste this code, or copy the link and open it there.',{cls:'dim',turbo:true});
+   const row=el('div','ln');const mk=(label,val)=>{const b=el('button');b.textContent=label;b.style.cssText='font:inherit;margin:4px 8px 4px 0;padding:4px 10px;background:var(--bar);color:var(--barfg);border:1px solid var(--dim);cursor:pointer';b.onclick=async()=>{try{await navigator.clipboard.writeText(val);b.textContent='copied ✓'}catch(e){prompt('Copy this:',val)}setTimeout(()=>b.textContent=label,1500)};return b};
+   row.append(mk('copy code',c),mk('copy link',link));out.append(row);scroll&&typeof scroll==='function'&&scroll()},
+ load:async a=>{let v=a.join('');if(!v)v=await rawAsk({ps:'<i class="a">paste progress code</i>&gt;'});if(!v)return;
+   let d;try{d=await readCode(v)}catch(e){play('deny');await type('That code is not valid. Check for a missing or mistyped character.',{cls:'err'});return}
+   const n=mergeState(d);if(S.cur&&BOOK.ch[S.cur]&&S.cur!==C.n)setChapter(S.cur);updateStatus();play('grant');
+   await type(`PROGRESS LOADED · ${n} new item${n===1?'':'s'} added · xp ${S.xp}`,{cls:'ok'});await type('Nothing on this device was lost: the code is merged in. Type *resume* to continue.',{cls:'dim',turbo:true})},
  learn:async a=>{let mi=parseInt(a[0])-1;
    if(isNaN(mi)){for(let i=0;i<C.modules.length;i++)await type(`  ${i+1}  [${cs(C.n).done[i]?'x':' '}] ${C.modules[i].title}`,{turbo:true});const nx=C.modules.findIndex((m,i)=>!cs(C.n).done[i]);const v=await askQ({chips:C.modules.map((m,i)=>String(i+1)),ps:'<i class="a">module</i>&gt;',ans:String(nx<0?1:nx+1)});mi=parseInt(v)-1}
    if(!(mi>=0&&mi<C.modules.length)){await type('No such module.',{cls:'err'});return}await learnFrom(mi,0)},
@@ -13123,7 +13165,7 @@ const CMD={
    out.innerHTML='';const ok=res.filter(r=>r.ok).length,pc=Math.round(ok/total*100);await type(`EXAM RESULT · ${ok} of ${total} · ${pc}%${up?' · time ran out':''}`,{cls:'hd'});
    for(let i=0;i<res.length;i++){const r=res[i];await type(`${i+1}. ${r.q}`,{cls:'q',turbo:true});await type(`   you:   ${r.you}`,{cls:r.ok?'ok':'err',turbo:true});await type(`   model: ${r.model}`,{turbo:true})}
    if(res.some(r=>!r.ok))await type('Short answers are marked by key ideas, so check the red ones against the model yourself.',{cls:'dim',turbo:true});
-   const st=cs(C.n);st.exam=Math.max(st.exam||0,pc);S.xp+=ok*10;save();play(pc>=80?'chapter':pc>=50?'module':'wrong');if(pc>=80)await fig(FIG.fireworks(),true);loc=''},
+   const st=cs(C.n);st.exam=Math.max(st.exam||0,pc);S.xp+=ok*10;save();codeDue=true;play(pc>=80?'chapter':pc>=50?'module':'wrong');if(pc>=80)await fig(FIG.fireworks(),true);loc=''},
  boss:async()=>{ctx='boss';const B=C.boss||{name:'THE LEMON',art:LEMON.split('\n'),taunts:['Sour, isn\'t it?','I knew you skimmed that part.']};
    for(;;){let b=100,y=100,i=0,hit=false;const qs=shuffle([...allQ(C),...(C.calc||[]).map(f=>{const g=f();return{t:'num',q:g.q,a:g.a,tol:g.tol,why:g.steps[g.steps.length-1]}})]);await type(`BOSS · ${B.name}`,{cls:'hd'});
    await say([`Deep in the vault lives everything you didn't study in chapter ${C.n}. Today it calls itself ${B.name}.`,"Every right answer hits it for 10. Every wrong answer, or 30 seconds of silence, costs you 25. No hints."]);await wait();
@@ -13131,7 +13173,7 @@ const CMD={
      if(r.ok){b-=10;S.xp+=10;play('hit');await type(`[ HIT -10 ] ${q.why||''}`,{cls:'ok'})}
      else{y-=25;await crashFx();play('hurt');await type(`${r.timeout?'Too slow. ':''}It was ${r.correct}. ${q.why||''}`,{cls:'err'});await type(B.name+': "'+pick(B.taunts)+'"',{cls:'acc'})}
      updateStatus();if(b>0&&y>0)await wait()}
-   if(b<=0){cs(C.n).boss++;S.xp+=150;save();out.innerHTML='';play('chapter');await type(`${B.name} DEFEATED · +150 xp · you had ${y} hp left`,{cls:'hd'});await fig(FIG.trophy(),true);await fig(FIG.fireworks(),true);await say([`Chapter ${C.n} is yours, ${S.name||'operator'}. Go and do the same to the exam.`]);break}
+   if(b<=0){cs(C.n).boss++;S.xp+=150;save();codeDue=true;out.innerHTML='';play('chapter');await type(`${B.name} DEFEATED · +150 xp · you had ${y} hp left`,{cls:'hd'});await fig(FIG.trophy(),true);await fig(FIG.fireworks(),true);await say([`Chapter ${C.n} is yours, ${S.name||'operator'}. Go and do the same to the exam.`]);break}
    await meltdown('DEFEATED',`  ${B.name} wins this round.\n\n  * Rematch starts now, with fresh questions.\n  * Tip: run "learn" on the modules you missed, or "cheat".`);out.innerHTML=''}loc=''},
  crack:async()=>{ctx='crack';let queue=shuffle(C.gloss).slice(0,8),total=queue.length,done=0;await type(`VAULT CRACKER · decrypt ${total} terms`,{cls:'hd'});
    await say(["Each lock is a key term. I give the clue, you type the term. Three tries. Each miss, I brute-force a few letters for you.","Fail a lock and it goes to the back of the queue. Nobody leaves until every lock is open."]);
@@ -13194,7 +13236,7 @@ async function runCmd(v){const[c0,...a]=v.trim().split(/\s+/),c1=c0.toLowerCase(
   if(!f){play('deny');await type(TH[S.theme].nf(c0),{cls:'err',turbo:true});await type('Type *help* for the list, or *menu*.',{cls:'dim',turbo:true});return}
   try{await f(a)}catch(e){turbo=false;auto=false;if(e===ABORT){await type('^C',{cls:'dim'});await type('Back at the shell. Your place is saved: type *resume* or *menu*.',{cls:'dim',turbo:true})}else{console.error(e);await type('internal error: '+e.message,{cls:'err'})}}
   ctx='shell';loc='';updateStatus()}
-async function shell(){for(;;){ctx='shell';updateStatus();const v=await rawAsk({chips:['learn','resume','ten','calc','exam','boss','crack','review','gallery','lab','book','menu','help']});if(v)await runCmd(v)}}
+async function shell(){for(;;){ctx='shell';updateStatus();if(hashMsg){await type(hashMsg[0],{cls:hashMsg[1]});hashMsg=null}if(codeDue){codeDue=false;await codeNote()}const v=await rawAsk({chips:['learn','resume','code','ten','calc','exam','boss','crack','review','gallery','lab','book','menu','help']});if(v)await runCmd(v)}}
 
 /* ================= title screen, intro, main menu ================= */
 const COIN_F=["     .-'''''-.     ","   .'  _____  '.   ","  /   |_   _|   \\  "," ;      | |      ; "," |      | |      | "," ;      | |      ; ","  \\     |_|     /  ","   '.         .'   ","     '-.....-'     "];
@@ -13239,7 +13281,7 @@ async function boot(full){ctx='boot';skip=false;play('boot');for(const l of TH[S
     await say(["Name for the logbook?"]);const v=await rawAsk({ps:'<i class="a">login</i>:',ans:'operator',chips:TOUCH()?['trainee']:[]});if(TOUCH())0;S.name=(v||'operator').slice(0,24);save();
     await say([`Logged in as *${S.name}*. While I type, Enter or Space skips ahead. Every animation has a pause button. The ≡ button at the top holds the settings: terminal, sound, speed, difficulty, touch or keyboard.`,"Which chapter are you on? Pick it in the window."]);await bookPanel(true);out.innerHTML=''}
   await mainMenu()}
-(async()=>{setChapter(S.cur||11);
+(async()=>{setChapter(S.cur||11);await importFromHash();
   if(!S.theme||!TH[S.theme]){setTheme('dos');await type('SELECT A TERMINAL',{cls:'hd'});await type('Pick one in the window. Not sure? MS-DOS is the house style.',{cls:'dim',turbo:true});await themePanel(true);out.innerHTML=''}
   setTheme(S.theme);await boot();shell()})();
 window.__t={get mode(){return mode},get ctx(){return ctx},get ps(){return ps1El.textContent},get live(){return LIVE.length},get panel(){return !!panelEl},get ch(){return C.n}};
